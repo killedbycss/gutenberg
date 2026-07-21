@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Гутенберг</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <style>
+    @font-face { font-family: 'PT Root UI'; src: url('/assets/pt-root-ui_regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+    @font-face { font-family: 'PT Root UI'; src: url('/assets/pt-root-ui_medium.woff2') format('woff2'); font-weight: 500 600; font-display: swap; }
+    @font-face { font-family: 'PT Root UI'; src: url('/assets/pt-root-ui_bold.woff2') format('woff2'); font-weight: 700 900; font-display: swap; }
+    :root {
+      /* Минимальная палитра в духе Notion: почти монохром + один сдержанный синий */
+      --bg: #ffffff;
+      --surface: #ffffff;
+      --surface-2: #f5f5f4;
+      --border: #e9e9e7;
+      --text: #37352f;
+      --muted: #9b9a97;
+      --primary: #2f80ed;
+      --primary-ink: #ffffff;
+      --radius: 8px;
+      --font: 'PT Root UI', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #191919;
+        --surface: #1f1f1f;
+        --surface-2: #2a2a2a;
+        --border: #373737;
+        --text: #e6e6e4;
+        --muted: #8f8f8c;
+        --primary: #4a9eea;
+        --primary-ink: #ffffff;
+      }
+    }
+    html[data-theme="light"] { --bg:#fff; --surface:#fff; --surface-2:#f5f5f4; --border:#e9e9e7; --text:#37352f; --muted:#9b9a97; --primary:#2f80ed; }
+    html[data-theme="dark"] { --bg:#191919; --surface:#1f1f1f; --surface-2:#2a2a2a; --border:#373737; --text:#e6e6e4; --muted:#8f8f8c; --primary:#4a9eea; }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ---------- Верхняя панель (воркспейсы) ---------- */
+    .topbar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 14px;
+      height: 48px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      user-select: none;
+    }
+    .brand { display: flex; align-items: center; gap: 8px; padding-right: 6px; }
+    .brand-icon { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+    .brand .wordmark { font-weight: 800; font-size: 17px; letter-spacing: -.02em; color: var(--text); }
+
+    .tabs {
+      display: flex; align-items: stretch; gap: 4px; height: 100%;
+      min-width: 0; overflow-x: auto; scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      appearance: none; border: 0; background: transparent; color: var(--muted);
+      font-family: inherit; font-size: 14px; font-weight: 500;
+      padding: 0 11px; display: flex; align-items: center; gap: 8px;
+      cursor: pointer; position: relative; border-radius: 6px; margin: 7px 0;
+      flex: 0 0 auto; white-space: nowrap;
+      transition: background .12s ease, color .12s ease;
+    }
+    .tab:hover { background: var(--surface-2); color: var(--text); }
+    .tab .kbd {
+      font-size: 11px; color: var(--muted); border: 1px solid var(--border);
+      border-radius: 4px; padding: 0 5px; line-height: 15px; margin-left: 1px;
+    }
+    .tab[aria-selected="true"] { color: var(--text); font-weight: 600; background: var(--surface-2); }
+    .tab[aria-selected="true"] .kbd { color: var(--text); }
+
+    .spacer { flex: 1 1 auto; }
+    .actions { display: flex; align-items: center; gap: 6px; }
+    .icon-btn {
+      appearance: none; border: 1px solid var(--border); background: var(--surface);
+      color: var(--muted); border-radius: 6px; height: 30px; padding: 0 10px;
+      font-size: 13px; font-family: inherit; font-weight: 500; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: color .12s, background .12s, border-color .12s;
+    }
+    .icon-btn:hover { color: var(--text); background: var(--surface-2); }
+    .font-action { position: relative; }
+    .font-btn-mark { font: 700 15px/1 Georgia, serif; }
+    .font-status { position: absolute; top: 36px; right: 0; z-index: 20; width: 250px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); box-shadow: 0 10px 30px rgba(0,0,0,.16); font-size: 12px; line-height: 1.4; }
+    .font-status[hidden] { display: none; }
+    .font-status small { display: block; margin-top: 3px; color: var(--muted); }
+
+    /* ---------- Сцена с iframe ---------- */
+    .stage { flex: 1 1 auto; position: relative; background: var(--bg); }
+    .frame {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      border: 0;
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity .12s ease;
+    }
+    .frame.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+    .loader {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      background: var(--bg); color: var(--muted); font-size: 14px; gap: 10px;
+      z-index: 2;
+    }
+    .loader.hidden { display: none; }
+    .spinner {
+      width: 26px; height: 26px; border-radius: 50%;
+      border: 3px solid var(--border); border-top-color: var(--primary);
+      animation: spin .8s linear infinite; margin: 0 auto 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 720px) {
+      .tab { padding: 0 9px; gap: 6px; }
+      .tab .kbd { display: none; }
+      .icon-btn .label { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-icon" src="/assets/studio-icon.png" alt="" />
+      <div class="wordmark">Гутенберг</div>
+    </div>
+
+    <nav class="tabs" role="tablist" aria-label="Модули">
+      <button class="tab" role="tab" data-mod="spellcheck">Орфография <span class="kbd">⌥1</span></button>
+      <button class="tab" role="tab" data-mod="typograph">Типограф <span class="kbd">⌥2</span></button>
+      <button class="tab" role="tab" data-mod="converter">Конвертер <span class="kbd">⌥3</span></button>
+      <button class="tab" role="tab" data-mod="layouts">Макеты <span class="kbd">⌥4</span></button>
+    </nav>
+
+    <div class="spacer"></div>
+
+    <div class="actions">
+      <div class="font-action">
+        <button class="icon-btn" id="font-upload" title="Загрузить свой шрифт для интерфейса">
+          <span class="font-btn-mark">Aa+</span> <span class="label">Шрифт</span>
+        </button>
+        <input id="font-input" type="file" hidden accept=".otf,.ttf,.ttc,.woff,.woff2" />
+        <div class="font-status" id="font-status" hidden></div>
+      </div>
+      <button class="icon-btn" id="theme-toggle" title="Переключить тему">
+        <span id="theme-icon">◐</span> <span class="label" id="theme-label">Тема</span>
+      </button>
+      <button class="icon-btn" id="open-standalone" title="Открыть активный модуль в отдельной вкладке">
+        ↗ <span class="label">Отдельно</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="loader" id="loader">
+      <div>
+        <div class="spinner"></div>
+        Загрузка модуля…
+      </div>
+    </div>
+    <!-- iframe создаются скриптом ниже -->
+  </main>
+
+  <script>
+    (function () {
+      var MODULES = ['spellcheck', 'typograph', 'converter', 'layouts'];
+      var BROWSER_ONLY = document.documentElement.getAttribute('data-browser-only') === 'true';
+      var SITE_ROOT = BROWSER_ONLY ? './' : '/';
+      var LABELS = { spellcheck: 'Орфография', typograph: 'Типограф', converter: 'Конвертер', layouts: 'Макеты' };
+      var LS_KEY = 'studio.activeModule';
+
+      var stage = document.getElementById('stage');
+      var loader = document.getElementById('loader');
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+      var frames = {};
+      var loaded = {};
+      var THEME_KEY = 'studio.theme';
+      var customFont = null;
+      var theme = null;
+      try { theme = localStorage.getItem(THEME_KEY); } catch (e) {}
+      if (theme !== 'light' && theme !== 'dark') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+
+      function applyTheme(next) {
+        theme = next;
+        document.documentElement.setAttribute('data-theme', theme);
+        document.getElementById('theme-icon').textContent = theme === 'dark' ? '☀' : '☾';
+        document.getElementById('theme-label').textContent = theme === 'dark' ? 'Светлая' : 'Тёмная';
+        Object.keys(frames).forEach(function (mod) {
+          try { frames[mod].contentDocument.documentElement.setAttribute('data-theme', theme); } catch (e) {}
+        });
+        try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+      }
+
+      function injectFont(doc) {
+        if (!customFont || !doc) return;
+        var old = doc.getElementById('studio-custom-font');
+        if (old) old.remove();
+        var style = doc.createElement('style');
+        style.id = 'studio-custom-font';
+        style.textContent = customFont.css + '\n:root{--font:\'StudioCustom\',sans-serif}';
+        doc.head.appendChild(style);
+      }
+
+      function applyCustomFont(payload) {
+        var format = payload.outputs.woff2 ? 'woff2' : 'woff';
+        var mime = format === 'woff2' ? 'font/woff2' : 'font/woff';
+        var source = payload.outputs[format];
+        customFont = {
+          family: payload.family,
+          css: '@font-face{font-family:\'StudioCustom\';src:url(data:' + mime + ';base64,' + source + ') format(\'' + format + '\');font-display:swap;}'
+        };
+        var own = document.getElementById('studio-custom-font');
+        if (own) own.remove();
+        own = document.createElement('style'); own.id = 'studio-custom-font';
+        own.textContent = customFont.css + '\n:root{--font:\'StudioCustom\',sans-serif}';
+        document.head.appendChild(own);
+        Object.keys(frames).forEach(function (mod) {
+          try { injectFont(frames[mod].contentDocument); } catch (e) {}
+        });
+      }
+
+      function applyRawFont(file) {
+        return new Promise(function (resolve, reject) {
+          var reader = new FileReader();
+          reader.onerror = function () { reject(new Error('Не удалось прочитать файл шрифта')); };
+          reader.onload = function () {
+            var ext = (file.name.split('.').pop() || '').toLowerCase();
+            var format = ext === 'woff2' ? 'woff2' : ext === 'woff' ? 'woff' : ext === 'otf' ? 'opentype' : 'truetype';
+            customFont = {
+              family: file.name.replace(/\.[^.]+$/, ''),
+              css: '@font-face{font-family:\'StudioCustom\';src:url(' + reader.result + ') format(\'' + format + '\');font-display:swap;}'
+            };
+            var own = document.getElementById('studio-custom-font');
+            if (own) own.remove();
+            own = document.createElement('style'); own.id = 'studio-custom-font';
+            own.textContent = customFont.css + '\n:root{--font:\'StudioCustom\',\'PT Root UI\',sans-serif}';
+            document.head.appendChild(own);
+            Object.keys(frames).forEach(function (mod) {
+              try { injectFont(frames[mod].contentDocument); } catch (e) {}
+            });
+            resolve();
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+      applyTheme(theme);
+
+      // Создаём три iframe сразу — так состояние каждого модуля сохраняется
+      // при переключении вкладок (ничего не перезагружается).
+      MODULES.forEach(function (mod) {
+        var f = document.createElement('iframe');
+        f.className = 'frame';
+        f.title = LABELS[mod];
+        f.src = SITE_ROOT + 'app/' + mod + '/';
+        f.setAttribute('data-mod', mod);
+        f.addEventListener('load', function () {
+          loaded[mod] = true;
+          try { f.contentDocument.documentElement.setAttribute('data-theme', theme); } catch (e) {}
+          try { injectFont(f.contentDocument); } catch (e) {}
+          updateLoader();
+        });
+        stage.appendChild(f);
+        frames[mod] = f;
+      });
+
+      var active = null;
+
+      function updateLoader() {
+        loader.classList.toggle('hidden', !!loaded[active]);
+      }
+
+      function activate(mod) {
+        if (MODULES.indexOf(mod) === -1) mod = MODULES[0];
+        active = mod;
+        MODULES.forEach(function (m) {
+          frames[m].classList.toggle('active', m === mod);
+        });
+        tabs.forEach(function (t) {
+          t.setAttribute('aria-selected', String(t.getAttribute('data-mod') === mod));
+        });
+        document.title = LABELS[mod] + ' — Гутенберг';
+        try { localStorage.setItem(LS_KEY, mod); } catch (e) {}
+        updateLoader();
+      }
+
+      tabs.forEach(function (t) {
+        t.addEventListener('click', function () { activate(t.getAttribute('data-mod')); });
+      });
+
+      // Горячие клавиши: Alt (⌥) + 1/2/3/4 — переключение воркспейсов.
+      // Alt, а не ⌘/Ctrl: ⌘/Ctrl+цифра в браузере переключает вкладки браузера.
+      // Проверяем e.code (Digit1…), т.к. Alt+цифра на macOS даёт спецсимвол в e.key.
+      window.addEventListener('keydown', function (e) {
+        if (!e.altKey || e.metaKey || e.ctrlKey) return;
+        var i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code);
+        if (i !== -1) { e.preventDefault(); activate(MODULES[i]); }
+      });
+
+      document.getElementById('open-standalone').addEventListener('click', function () {
+        window.open(SITE_ROOT + 'app/' + active + '/', '_blank');
+      });
+      document.getElementById('theme-toggle').addEventListener('click', function () {
+        applyTheme(theme === 'dark' ? 'light' : 'dark');
+      });
+      var fontInput = document.getElementById('font-input');
+      var fontStatus = document.getElementById('font-status');
+      document.getElementById('font-upload').addEventListener('click', function () { fontInput.click(); });
+      fontInput.addEventListener('change', async function () {
+        var file = fontInput.files && fontInput.files[0];
+        if (!file) return;
+        fontStatus.hidden = false;
+        fontStatus.innerHTML = 'Загружаю шрифт…<small>Затем оптимизирую через встроенный конвертер</small>';
+        var form = new FormData(); form.append('font', file, file.name);
+        try {
+          await applyRawFont(file);
+          if (BROWSER_ONLY) {
+            fontStatus.innerHTML = '<b>' + file.name.replace(/[<>&]/g, '') + '</b><small>Шрифт применён локально в браузере</small>';
+            setTimeout(function () { fontStatus.hidden = true; }, 3500);
+            return;
+          }
+          fontStatus.innerHTML = '<b>' + file.name.replace(/[<>&]/g, '') + '</b><small>Применён · готовлю WOFF2/WOFF…</small>';
+          var response = await fetch('/converter/api/webfont', { method: 'POST', body: form });
+          var payload = await response.json();
+          if (!response.ok) throw new Error(payload.error || 'Не удалось преобразовать шрифт');
+          applyCustomFont(payload);
+          fontStatus.innerHTML = '<b>' + payload.family.replace(/[<>&]/g, '') + '</b><small>Шрифт применён к панели и всем разделам</small>';
+          setTimeout(function () { fontStatus.hidden = true; }, 3500);
+        } catch (error) {
+          fontStatus.innerHTML = '<b>Шрифт применён локально</b><small>Оптимизация недоступна: ' + String(error.message).replace(/[<>&]/g, '') + '</small>';
+          setTimeout(function () { fontStatus.hidden = true; }, 5000);
+        } finally {
+          fontInput.value = '';
+        }
+      });
+
+      // Восстанавливаем последнюю активную вкладку.
+      var saved = null;
+      try { saved = localStorage.getItem(LS_KEY); } catch (e) {}
+      activate(saved || MODULES[0]);
+    })();
+  </script>
+</body>
+</html>
