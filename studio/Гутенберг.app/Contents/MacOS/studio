@@ -1,0 +1,29 @@
+#!/bin/bash
+#
+# Ярлык «Гутенберг» (macOS .app). Двойной клик:
+#   • если сервер уже работает — просто открывает браузер;
+#   • иначе — запускает start.command (тот поднимет сервер и откроет браузер).
+#
+# Приложение само находит папку studio относительно своего расположения,
+# поэтому проект можно перемещать/переименовывать вместе с этим ярлыком.
+
+# .../studio/Гутенберг.app/Contents/MacOS/studio  →  подняться на 3 уровня к studio/
+HERE="$(cd "$(dirname "$0")" && pwd)"
+STUDIO="$(cd "$HERE/../../.." && pwd)"
+
+PORT="${PORT:-8770}"
+URL="http://127.0.0.1:$PORT"
+
+if command -v curl >/dev/null 2>&1 && curl -sf "$URL/healthz" >/dev/null 2>&1; then
+  # Уже запущено — просто открыть в браузере.
+  open "$URL"
+  exit 0
+fi
+
+if [ -x "$STUDIO/start.command" ]; then
+  # Запускаем через Terminal, чтобы был виден прогресс и возможные подсказки.
+  open -a Terminal "$STUDIO/start.command"
+else
+  open "$STUDIO"   # вдруг структура нарушена — покажем папку
+fi
+exit 0
