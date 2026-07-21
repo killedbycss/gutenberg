@@ -31,6 +31,19 @@ build_app() {
     plutil -replace CFBundleName -string "$app_name" "$app_path/Contents/Info.plist"
     plutil -replace CFBundleIdentifier -string "$bundle_identifier" "$app_path/Contents/Info.plist"
     iconutil --convert icns --output "$app_path/Contents/Resources/AppIcon.icns" "$ICONSET_DIR"
+    cp "$PROJECT_DIR/Packaging/backend_bootstrap.py" "$app_path/Contents/Resources/BackendBootstrap.py"
+
+    local backend_root="$app_path/Contents/Resources/BackendRoot"
+    rm -rf "$backend_root"
+    mkdir -p "$backend_root/studio" "$backend_root/spellcheck" "$backend_root/typograph" "$backend_root/converter" "$backend_root/layouts"
+    rsync -a --exclude '.venv' --exclude '.pytest_cache' --exclude '__pycache__' --exclude '*.pyc' --exclude 'tests' \
+        --exclude '/#/***' --exclude '/первый/***' --exclude '/раз/***' --exclude '/только/***' --exclude '.DS_Store' \
+        "$PROJECT_DIR/../studio/backend/" "$backend_root/studio/backend/"
+    for module in spellcheck typograph converter layouts; do
+        rsync -a --exclude '.venv' --exclude '.pytest_cache' --exclude '__pycache__' --exclude '*.pyc' --exclude 'tests' \
+            --exclude '/#/***' --exclude '/первый/***' --exclude '/раз/***' --exclude '/только/***' --exclude '.DS_Store' \
+            "$PROJECT_DIR/../$module/backend/" "$backend_root/$module/backend/"
+    done
     codesign --force --sign - "$app_path"
 
     print "Готово: $app_path"
