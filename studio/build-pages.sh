@@ -6,13 +6,13 @@ ROOT="$(cd "$STUDIO/.." && pwd)"
 OUT="$ROOT/github-pages"
 
 mkdir -p "$OUT/app" "$OUT/assets"
-cp "$STUDIO/shell/index.html" "$OUT/index.html"
+cp "$STUDIO/shell/index.html" "$ROOT/index.html"
 cp "$STUDIO/shell/assets/"* "$OUT/assets/"
 cp "$STUDIO/shell/assets/favicon.ico" "$OUT/favicon.ico"
 
 # Оболочка должна работать и в корне домена, и в подпапке GitHub Pages.
-perl -0pi -e 's/<html lang="ru">/<html lang="ru" data-browser-only="true">/' "$OUT/index.html"
-perl -0pi -e "s|href=\"/favicon.ico\"|href=\"./favicon.ico\"|g; s|url\\('/assets/|url\\('./assets/|g; s|src=\"/assets/|src=\"./assets/|g" "$OUT/index.html"
+perl -0pi -e 's/<html lang="ru">/<html lang="ru" data-browser-only="true">/' "$ROOT/index.html"
+perl -0pi -e "s|href=\"/favicon.ico\"|href=\"./github-pages/favicon.ico\"|g; s|url\\('/assets/|url\\('./github-pages/assets/|g; s|src=\"/assets/|src=\"./github-pages/assets/|g; s|var SITE_ROOT = BROWSER_ONLY \? './' : '/';|var SITE_ROOT = BROWSER_ONLY ? './github-pages/' : '/';|g" "$ROOT/index.html"
 
 for mod in spellcheck typograph converter layouts; do
   FRONT="$ROOT/$mod/frontend"
@@ -24,6 +24,6 @@ for mod in spellcheck typograph converter layouts; do
 done
 
 cp "$ROOT/converter/frontend/node_modules/fonteditor-core/woff2/woff2.wasm" "$OUT/app/converter/woff2.wasm"
-touch "$OUT/.nojekyll"
+touch "$ROOT/.nojekyll"
 
-echo "Готово: $OUT"
+echo "Готово: $ROOT/index.html и $OUT"

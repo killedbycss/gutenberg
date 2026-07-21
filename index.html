@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Гутенберг</title>
-  <link rel="icon" type="image/x-icon" href="./favicon.ico" />
+  <link rel="icon" type="image/x-icon" href="./github-pages/favicon.ico" />
   <style>
-    @font-face { font-family: 'PT Root UI'; src: url('./assets/pt-root-ui_regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
-    @font-face { font-family: 'PT Root UI'; src: url('./assets/pt-root-ui_medium.woff2') format('woff2'); font-weight: 500 600; font-display: swap; }
-    @font-face { font-family: 'PT Root UI'; src: url('./assets/pt-root-ui_bold.woff2') format('woff2'); font-weight: 700 900; font-display: swap; }
+    @font-face { font-family: 'PT Root UI'; src: url('./github-pages/assets/pt-root-ui_regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+    @font-face { font-family: 'PT Root UI'; src: url('./github-pages/assets/pt-root-ui_medium.woff2') format('woff2'); font-weight: 500 600; font-display: swap; }
+    @font-face { font-family: 'PT Root UI'; src: url('./github-pages/assets/pt-root-ui_bold.woff2') format('woff2'); font-weight: 700 900; font-display: swap; }
     :root {
       /* Минимальная палитра в духе Notion: почти монохром + один сдержанный синий */
       --bg: #ffffff;
@@ -136,7 +136,7 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <img class="brand-icon" src="./assets/studio-icon.png" alt="" />
+      <img class="brand-icon" src="./github-pages/assets/studio-icon.png" alt="" />
       <div class="wordmark">Гутенберг</div>
     </div>
 
@@ -180,7 +180,7 @@
     (function () {
       var MODULES = ['spellcheck', 'typograph', 'converter', 'layouts'];
       var BROWSER_ONLY = document.documentElement.getAttribute('data-browser-only') === 'true';
-      var SITE_ROOT = BROWSER_ONLY ? './' : '/';
+      var SITE_ROOT = BROWSER_ONLY ? './github-pages/' : '/';
       var LABELS = { spellcheck: 'Орфография', typograph: 'Типограф', converter: 'Конвертер', layouts: 'Макеты' };
       var LS_KEY = 'studio.activeModule';
 
