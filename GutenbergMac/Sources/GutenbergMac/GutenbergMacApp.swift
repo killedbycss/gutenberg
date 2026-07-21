@@ -5,9 +5,9 @@ struct GutenbergMacApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .frame(minWidth: 720, minHeight: 480)
+                .frame(minWidth: 1120, minHeight: 680)
         }
-        .defaultSize(width: 960, height: 640)
+        .defaultSize(width: 1280, height: 780)
         .windowResizability(.contentMinSize)
 
         Settings {

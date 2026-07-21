@@ -1,0 +1,9 @@
+# Единое окружение Студии = объединение зависимостей трёх модулей.
+# Один процесс импортирует все три бэкенда, поэтому все их пакеты нужны здесь.
+
+Flask==3.0.3          # общий веб-фреймворк (тянет Werkzeug 3.x: Dispatcher + run_simple)
+flask-cors==5.0.0     # нужен spellcheck и converter
+requests==2.32.3      # spellcheck → клиент LanguageTool (онлайн-сервис)
+fonttools==4.53.1     # converter → разбор/конвертация шрифтов
+brotli==1.1.0         # converter → сжатие WOFF2
+Pillow==11.3.0        # converter → анализ и конвертация изображений

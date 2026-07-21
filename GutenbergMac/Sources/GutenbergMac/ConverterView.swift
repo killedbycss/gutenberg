@@ -64,8 +64,7 @@ struct ConverterView: View {
             let accessed = files.filter { $0.startAccessingSecurityScopedResource() }
             defer { accessed.forEach { $0.stopAccessingSecurityScopedResource() } }
             do {
-                let values = targets.sorted().map { ("targets", $0) }
-                let (data, _) = try await APIClient.shared.multipart(path: "converter/api/convert", files: files, field: "fonts", values: values)
+                let data = try await ConverterService.shared.convert(files: files, targets: targets.sorted())
                 let panel = NSSavePanel()
                 panel.nameFieldStringValue = "converted-files.zip"
                 panel.allowedContentTypes = [.zip]

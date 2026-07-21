@@ -12,7 +12,7 @@ public sealed partial class MainWindow : Window
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1180, 760));
         Navigation.SelectedItem = Navigation.MenuItems[0];
         RootFrame.Navigate(typeof(SpellcheckPage));
-        Loaded += async (_, _) => await StartBackendAsync();
+        Navigation.Loaded += async (_, _) => await StartBackendAsync();
         Closed += (_, _) => BackendManager.Shared.Dispose();
     }
 

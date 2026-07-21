@@ -222,7 +222,9 @@ struct NativeTypographer {
     }
 
     private func detectLanguage(_ text: String, fallback: String) -> String {
-        let ru = text.unicodeScalars.filter { CharacterSet(charactersIn: "А-Яа-яЁё").contains($0) }.count
+        let ru = text.unicodeScalars.filter { scalar in
+            (0x0410...0x044F).contains(scalar.value) || scalar.value == 0x0401 || scalar.value == 0x0451
+        }.count
         let en = text.unicodeScalars.filter { CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz").contains($0) }.count
         if ru == en { return fallback == "en" ? "en" : "ru" }
         return ru > en ? "ru" : "en"

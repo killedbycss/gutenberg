@@ -19,7 +19,6 @@ enum Workspace: String, CaseIterable, Identifiable {
 
 struct ContentView: View {
     @State private var selection = Workspace.spellcheck
-    @StateObject private var backend = BackendManager.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -43,33 +42,8 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .overlay(alignment: .bottomTrailing) {
-            BackendStatusView(backend: backend)
-                .padding(12)
-        }
-        .task { backend.startIfNeeded() }
         .onReceive(NotificationCenter.default.publisher(for: .selectWorkspace)) { note in
             if let workspace = note.object as? Workspace { selection = workspace }
-        }
-    }
-}
-
-private struct BackendStatusView: View {
-    @ObservedObject var backend: BackendManager
-
-    var body: some View {
-        if backend.state != .ready {
-            HStack(spacing: 8) {
-                if backend.state == .starting { ProgressView().controlSize(.small) }
-                Image(systemName: backend.state == .failed ? "exclamationmark.triangle.fill" : "gearshape.2")
-                Text(backend.message)
-                if backend.state == .failed {
-                    Button("Повторить") { backend.startIfNeeded(force: true) }
-                }
-            }
-            .font(.caption)
-            .padding(10)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
         }
     }
 }

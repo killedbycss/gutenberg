@@ -24,6 +24,7 @@ build_app() {
     print "Сборка $app_name ($architecture)…"
     swift build --package-path "$PROJECT_DIR" -c release --arch "$architecture"
 
+    rm -rf "$app_path"
     mkdir -p "$app_path/Contents/MacOS" "$app_path/Contents/Resources"
     cp "$executable_path" "$app_path/Contents/MacOS/GutenbergMac"
     cp "$INFO_PLIST" "$app_path/Contents/Info.plist"
@@ -31,20 +32,13 @@ build_app() {
     plutil -replace CFBundleName -string "$app_name" "$app_path/Contents/Info.plist"
     plutil -replace CFBundleIdentifier -string "$bundle_identifier" "$app_path/Contents/Info.plist"
     iconutil --convert icns --output "$app_path/Contents/Resources/AppIcon.icns" "$ICONSET_DIR"
-    cp "$PROJECT_DIR/Packaging/backend_bootstrap.py" "$app_path/Contents/Resources/BackendBootstrap.py"
-
-    local backend_root="$app_path/Contents/Resources/BackendRoot"
-    rm -rf "$backend_root"
-    mkdir -p "$backend_root/studio" "$backend_root/spellcheck" "$backend_root/typograph" "$backend_root/converter" "$backend_root/layouts"
-    rsync -a --exclude '.venv' --exclude '.pytest_cache' --exclude '__pycache__' --exclude '*.pyc' --exclude 'tests' \
-        --exclude '/#/***' --exclude '/первый/***' --exclude '/раз/***' --exclude '/только/***' --exclude '.DS_Store' \
-        "$PROJECT_DIR/../studio/backend/" "$backend_root/studio/backend/"
-    for module in spellcheck typograph converter layouts; do
-        rsync -a --exclude '.venv' --exclude '.pytest_cache' --exclude '__pycache__' --exclude '*.pyc' --exclude 'tests' \
-            --exclude '/#/***' --exclude '/первый/***' --exclude '/раз/***' --exclude '/только/***' --exclude '.DS_Store' \
-            "$PROJECT_DIR/../$module/backend/" "$backend_root/$module/backend/"
-    done
-    codesign --force --sign - "$app_path"
+    ditto "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework" "$app_path/Contents/Resources/Python3.framework"
+    rsync -a --exclude '__pycache__' --exclude '*.pyc' "$PROJECT_DIR/VendorPython/$architecture/" "$app_path/Contents/Resources/PythonPackages/"
+    mkdir -p "$app_path/Contents/Resources/ConverterRuntime/fontkit"
+    cp "$PROJECT_DIR/Packaging/converter_helper.py" "$app_path/Contents/Resources/ConverterRuntime/converter_helper.py"
+    cp "$PROJECT_DIR/../converter/backend/imagekit.py" "$app_path/Contents/Resources/ConverterRuntime/imagekit.py"
+    rsync -a --exclude '__pycache__' --exclude '*.pyc' "$PROJECT_DIR/../converter/backend/fontkit/" "$app_path/Contents/Resources/ConverterRuntime/fontkit/"
+    codesign --force --deep --sign - "$app_path"
 
     print "Готово: $app_path"
 }
