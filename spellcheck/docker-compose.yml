@@ -1,0 +1,28 @@
+# Self-hosted LanguageTool — работает полностью офлайн после первой загрузки образа.
+# Запуск:  docker compose up -d
+# Проверка: curl "http://localhost:8010/v2/languages"
+services:
+  languagetool:
+    image: erikvl87/languagetool:6.4
+    container_name: languagetool
+    ports:
+      - "8010:8010"
+    environment:
+      # Память под JVM. Для комфортной работы русского + английского хватает 2 ГБ.
+      Java_Xms: "512m"
+      Java_Xmx: "2g"
+      # Отключаем внешние запросы (полностью локальная проверка).
+      langtool_fasttextModel: ""
+    # Опционально: n-gram данные заметно улучшают распознавание «спутанных» слов
+    # (their/there, то/-то). Раскомментируйте и укажите путь к распакованным данным.
+    # volumes:
+    #   - ./ngrams:/ngrams
+    # environment:
+    #   langtool_languageModel: /ngrams
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8010/v2/languages"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
