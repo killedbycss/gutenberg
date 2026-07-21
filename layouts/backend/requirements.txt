@@ -1,0 +1,5 @@
+Flask>=3.0
+flask-cors>=4.0
+fonttools>=4.50
+brotli>=1.1
+pytest>=8.0
