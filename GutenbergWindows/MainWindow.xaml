@@ -1,0 +1,14 @@
+<Window x:Class="GutenbergWindows.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:GutenbergWindows" Title="Гутенберг">
+  <Grid>
+    <NavigationView x:Name="Navigation" IsBackButtonVisible="Collapsed" IsSettingsVisible="False" PaneDisplayMode="Top" SelectionChanged="Navigation_SelectionChanged">
+      <NavigationView.MenuItems>
+        <NavigationViewItem Content="Орфография" Tag="spellcheck" Icon="Edit"/>
+        <NavigationViewItem Content="Типограф" Tag="typograph" Icon="Font"/>
+        <NavigationViewItem Content="Конвертер" Tag="converter" Icon="Switch"/>
+        <NavigationViewItem Content="Макеты" Tag="layouts" Icon="Pictures"/>
+      </NavigationView.MenuItems>
+      <Frame x:Name="RootFrame"/>
+    </NavigationView>
+    <InfoBar x:Name="BackendInfo" Title="Локальное ядро" IsOpen="True" IsClosable="False" Severity="Informational" VerticalAlignment="Bottom" Margin="12"/>
+  </Grid>
+</Window>

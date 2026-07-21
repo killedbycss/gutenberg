@@ -1,0 +1,14 @@
+<Page x:Class="GutenbergWindows.SpellcheckPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Grid Padding="20" ColumnSpacing="16"><Grid.ColumnDefinitions><ColumnDefinition Width="3*"/><ColumnDefinition Width="2*"/></Grid.ColumnDefinitions>
+    <Grid RowSpacing="12"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <StackPanel Orientation="Horizontal" Spacing="10"><ComboBox x:Name="Language" Width="150" SelectedIndex="0"><ComboBoxItem Content="Авто" Tag="auto"/><ComboBoxItem Content="Русский" Tag="ru-RU"/><ComboBoxItem Content="English" Tag="en-US"/></ComboBox><CheckBox x:Name="Style" Content="Проверять стиль"/><Button Content="Проверить" Style="{StaticResource AccentButtonStyle}" Click="Check_Click"/></StackPanel>
+      <TextBox x:Name="Source" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" Text="На руском языке можно допустить ашибку."/>
+      <TextBlock x:Name="Count" Grid.Row="2" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+    </Grid>
+    <Grid Grid.Column="1" RowSpacing="10"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock x:Name="IssuesTitle" Text="Замечания" Style="{StaticResource SubtitleTextBlockStyle}"/><Button Content="Словарь…" Click="Dictionary_Click"/></StackPanel>
+      <ListView x:Name="Issues" Grid.Row="1"><ListView.ItemTemplate><DataTemplate><StackPanel Margin="4,8" Spacing="6"><TextBlock Text="{Binding Fragment}" FontWeight="SemiBold"/><TextBlock Text="{Binding Message}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><ItemsControl ItemsSource="{Binding Replacements}"/></StackPanel></DataTemplate></ListView.ItemTemplate></ListView>
+      <InfoBar x:Name="Status" Grid.Row="2" IsOpen="False" IsClosable="True"/>
+    </Grid>
+  </Grid>
+</Page>
