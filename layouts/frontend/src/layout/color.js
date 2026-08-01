@@ -46,3 +46,22 @@ export function rgbToCmyk({ r, g, b }) {
 
 export const hexToCmyk = (hex) => rgbToCmyk(hexToRgb(hex))
 export const cmykToHex = (cmyk) => rgbToHex(cmykToRgb(cmyk))
+
+// Экранные RGB-приближения распространённых Pantone Solid Coated. Без
+// физического веера и ICC-профиля это ориентир, а не цветопроба для печати.
+export const PANTONE_COLORS = [
+  ['Pantone White', '#FFFFFF'], ['Pantone Cool Gray 5 C', '#B1B3B3'], ['Pantone Black C', '#2D2926'],
+  ['Pantone 186 C', '#C8102E'], ['Pantone 485 C', '#DA291C'], ['Pantone 151 C', '#FF8200'],
+  ['Pantone 123 C', '#FFC72C'], ['Pantone 354 C', '#00B140'], ['Pantone 347 C', '#009A44'],
+  ['Pantone 300 C', '#005EB8'], ['Pantone 286 C', '#0033A0'], ['Pantone 2592 C', '#9B26B6'],
+  ['Pantone 219 C', '#DA1884'],
+].map(([name, hex]) => ({ name, hex }))
+
+export function nearestPantone(hex) {
+  const rgb = hexToRgb(hex)
+  return PANTONE_COLORS.reduce((best, item) => {
+    const candidate = hexToRgb(item.hex)
+    const distance = (rgb.r - candidate.r) ** 2 + (rgb.g - candidate.g) ** 2 + (rgb.b - candidate.b) ** 2
+    return !best || distance < best.distance ? { ...item, distance } : best
+  }, null)
+}

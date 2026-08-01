@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { hexToCmyk, hexToRgb, cmykToHex } from '../layout/color'
+import { hexToCmyk, hexToRgb, cmykToHex, nearestPantone, PANTONE_COLORS } from '../layout/color'
 import { ROLE_LABEL } from '../layout/schema'
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0))
@@ -29,7 +29,7 @@ export default function PropertiesPanel({
       <div className="tool-group">
         <div className="tool-title-row"><h3>Палитра</h3><button className="random-palette" onClick={onRandomPalette}>Новая</button></div>
         <div className="palette-controls">
-          <div className="segmented small"><button className={colorModel === 'rgb' ? 'on' : ''} onClick={() => setColorModel('rgb')}>RGB</button><button className={colorModel === 'cmyk' ? 'on' : ''} onClick={() => setColorModel('cmyk')}>CMYK</button></div>
+          <div className="segmented small"><button className={colorModel === 'rgb' ? 'on' : ''} onClick={() => setColorModel('rgb')}>RGB</button><button className={colorModel === 'cmyk' ? 'on' : ''} onClick={() => setColorModel('cmyk')}>CMYK</button><button className={colorModel === 'pantone' ? 'on' : ''} onClick={() => setColorModel('pantone')}>Pantone</button></div>
           <div className="palette-count"><button onClick={onRemovePaletteColor}>−</button><span>{paletteColors.length}</span><button onClick={onAddPaletteColor}>+</button></div>
         </div>
         <button className="palette-image-button" onClick={() => paletteImageInput.current?.click()}>▧ Извлечь цвета из картинки</button>
@@ -48,6 +48,7 @@ export default function PropertiesPanel({
           {paletteColors.map((color, index) => {
             const cmyk = hexToCmyk(color)
             const rgb = hexToRgb(color)
+            const pantone = nearestPantone(color)
             const rgba = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1)`
             return <div className={`palette-strip-wrap${paletteSelected.has(index) ? ' selected' : ''}`} key={index}>
             <div className="palette-strip">
@@ -62,6 +63,7 @@ export default function PropertiesPanel({
               <label><span>RGBA</span><input key={`rgba-${color}`} defaultValue={rgba} onBlur={(event) => { const next = rgbaToHex(event.target.value); if (next) onPaletteColor(index, next); else event.target.value = rgba }} aria-label={`RGBA цвета ${index + 1}`} /></label>
             </div>}
             {colorModel === 'cmyk' && <div className="strip-cmyk">{['c','m','y','k'].map((channel) => <label key={channel}><span>{channel.toUpperCase()}</span><input type="number" min="0" max="100" value={cmyk[channel]} onChange={(event) => onPaletteColor(index, cmykToHex({...cmyk, [channel]: Math.max(0, Math.min(100, +event.target.value))}))} /></label>)}</div>}
+            {colorModel === 'pantone' && <label className="strip-pantone"><span>Ближайший экранный эквивалент</span><select value={pantone.name} onChange={(event) => onPaletteColor(index, PANTONE_COLORS.find((item) => item.name === event.target.value)?.hex || color)}>{PANTONE_COLORS.map((item) => <option key={item.name} value={item.name}>{item.name} · {item.hex}</option>)}</select></label>}
             </div>
           })}
         </div>

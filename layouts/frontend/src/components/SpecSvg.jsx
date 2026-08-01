@@ -3,7 +3,10 @@ import { specToDrawOps } from '../render/svg'
 import { RENDER_FONT_FAMILY } from '../layout/schema'
 import iphoneStatusBar from '../assets/iphone-status-bar.svg?raw'
 
-const IPHONE_STATUS_BAR_URI = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(iphoneStatusBar)}`
+const island = '<rect x="138.5" y="13.6665" width="125" height="37" rx="18.5" fill="black"/>'
+const darkStatusBar = iphoneStatusBar.replace(island, '__ISLAND__').replaceAll('fill="black"', 'fill="white"').replace('__ISLAND__', island)
+const IPHONE_STATUS_BAR_LIGHT = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(iphoneStatusBar)}`
+const IPHONE_STATUS_BAR_DARK = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(darkStatusBar)}`
 
 // Статический (не интерактивный) рендер LayoutSpec в SVG. Тот же расчёт, что и
 // в превью/экспорте (specToDrawOps). Используется в плитках бенто.
@@ -33,7 +36,7 @@ export function DeviceChrome({ purpose, width, height, background }) {
   const ink = isDark(background) ? '#fff' : '#111'
   const faint = isDark(background) ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.15)'
   if (purpose === 'mobile-portrait') return <g aria-label="Интерфейс смартфона">
-    <image href={IPHONE_STATUS_BAR_URI} x="0" y="0" width={width} height={width * 62 / 402} style={isDark(background) ? { filter: 'invert(1)' } : undefined} />
+    <image href={isDark(background) ? IPHONE_STATUS_BAR_DARK : IPHONE_STATUS_BAR_LIGHT} x="0" y="0" width={width} height={width * 62 / 402} />
     <rect x={width * .36} y={height * .976} width={width * .28} height={height * .004} rx={height * .002} fill={ink} opacity=".8" />
   </g>
   if (purpose === 'tablet-portrait') return <g aria-label="Интерфейс планшета">

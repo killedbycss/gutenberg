@@ -177,6 +177,8 @@ body {
 .strip-cmyk { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 5px 0 3px; }
 .strip-cmyk label { display: flex; align-items: center; gap: 2px; color: var(--muted); font-size: 8px; }
 .strip-cmyk input { width: 100%; min-width: 0; padding: 3px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 9px; }
+.strip-pantone { display: grid; gap: 4px; padding: 6px 0 3px; color: var(--muted); font-size: 9px; }
+.strip-pantone select { width: 100%; min-width: 0; padding: 5px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font: 10px var(--font); }
 .strip-rgb { display: grid; gap: 4px; padding: 5px 0 3px; }
 .strip-rgb label { display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 5px; color: var(--muted); font-size: 8px; }
 .strip-rgb input { width: 100%; min-width: 0; box-sizing: border-box; padding: 3px 5px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: 9px var(--mono); cursor: text; }
@@ -256,7 +258,7 @@ body {
 /* Оверлеи в системе координат холста — обводки постоянной толщины. */
 .frame-sel { stroke: var(--primary); stroke-width: 2; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; }
 .frame-coord-bg { fill: color-mix(in srgb, var(--surface) 94%, transparent); stroke: var(--border); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.frame-coord-label { fill: var(--text); font: 600 17px var(--font); letter-spacing: .01em; }
+.frame-coord-label { fill: var(--text); font-family: var(--font); font-weight: 600; letter-spacing: .01em; }
 .frame-ph {
   fill: color-mix(in srgb, var(--primary) 7%, transparent);
   stroke: color-mix(in srgb, var(--primary) 45%, transparent);

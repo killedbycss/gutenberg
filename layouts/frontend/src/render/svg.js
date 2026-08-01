@@ -7,7 +7,10 @@ import { RENDER_FONT_FAMILY } from '../layout/schema'
 import { wrapText } from './textLayout'
 import iphoneStatusBar from '../assets/iphone-status-bar.svg?raw'
 
-const IPHONE_STATUS_BAR_URI = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(iphoneStatusBar)}`
+const island = '<rect x="138.5" y="13.6665" width="125" height="37" rx="18.5" fill="black"/>'
+const darkStatusBar = iphoneStatusBar.replace(island, '__ISLAND__').replaceAll('fill="black"', 'fill="white"').replace('__ISLAND__', island)
+const IPHONE_STATUS_BAR_LIGHT = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(iphoneStatusBar)}`
+const IPHONE_STATUS_BAR_DARK = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(darkStatusBar)}`
 
 function applyTransform(text, transform) {
   if (transform === 'uppercase') return text.toUpperCase()
@@ -131,7 +134,7 @@ function deviceChromeSvg(purpose, width, height, background) {
   const dark = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000 < 128
   const ink = dark ? '#fff' : '#111'
   const faint = dark ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.15)'
-  if (purpose === 'mobile-portrait') return `<g><image href="${IPHONE_STATUS_BAR_URI}" x="0" y="0" width="${width}" height="${width*62/402}"${dark ? ' style="filter:invert(1)"' : ''}/><rect x="${width*.36}" y="${height*.976}" width="${width*.28}" height="${height*.004}" rx="${height*.002}" fill="${ink}" opacity=".8"/></g>`
+  if (purpose === 'mobile-portrait') return `<g><image href="${dark ? IPHONE_STATUS_BAR_DARK : IPHONE_STATUS_BAR_LIGHT}" x="0" y="0" width="${width}" height="${width*62/402}"/><rect x="${width*.36}" y="${height*.976}" width="${width*.28}" height="${height*.004}" rx="${height*.002}" fill="${ink}" opacity=".8"/></g>`
   if (purpose === 'tablet-portrait') return `<g><circle cx="${width*.5}" cy="${height*.015}" r="${height*.004}" fill="${ink}" opacity=".65"/><text x="${width*.04}" y="${height*.03}" fill="${ink}" font-family="sans-serif" font-size="${height*.011}" font-weight="600">9:41</text><rect x="${width*.43}" y="${height*.977}" width="${width*.14}" height="${height*.0035}" rx="${height*.002}" fill="${ink}" opacity=".7"/></g>`
   if (purpose === 'desktop-hd') return `<g><rect width="${width}" height="${height*.075}" fill="${faint}"/><circle cx="${width*.022}" cy="${height*.037}" r="${height*.009}" fill="#ff5f57"/><circle cx="${width*.042}" cy="${height*.037}" r="${height*.009}" fill="#febc2e"/><circle cx="${width*.062}" cy="${height*.037}" r="${height*.009}" fill="#28c840"/><rect x="${width*.16}" y="${height*.018}" width="${width*.68}" height="${height*.038}" rx="${height*.019}" fill="${background}" opacity=".72" stroke="${ink}" stroke-opacity=".18"/><text x="${width*.5}" y="${height*.044}" text-anchor="middle" fill="${ink}" opacity=".6" font-family="sans-serif" font-size="${height*.014}">gutenberg.local</text></g>`
   if (purpose === 'ebook-reader') return `<g><text x="${width*.05}" y="${height*.026}" fill="${ink}" opacity=".7" font-family="serif" font-size="${height*.01}">09:41</text><text x="${width*.95}" y="${height*.026}" text-anchor="end" fill="${ink}" opacity=".7" font-family="sans-serif" font-size="${height*.01}">82%</text><line x1="${width*.05}" y1="${height*.955}" x2="${width*.95}" y2="${height*.955}" stroke="${ink}" stroke-opacity=".22"/></g>`

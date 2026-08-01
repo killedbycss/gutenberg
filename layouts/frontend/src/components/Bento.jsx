@@ -66,7 +66,7 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
       const duration = Math.max(3200, Math.min(12000, durations.length ? Math.max(...durations) : 9200))
       animations.forEach((item) => { item.currentTime = 0 })
       const first = await renderComposition(0); if (!first) return
-      const width = Math.min(960, first.width); const height = Math.round(first.height * width / first.width)
+      const width = first.width; const height = first.height
       const frame = document.createElement('canvas'); frame.width = width; frame.height = height
       const ctx = frame.getContext('2d'); const encoder = GIFEncoder()
       const frames = Math.max(60, Math.min(120, Math.round(duration / 90)))
