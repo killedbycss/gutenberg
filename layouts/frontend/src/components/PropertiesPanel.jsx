@@ -14,6 +14,7 @@ export default function PropertiesPanel({
   frame, onMove, paletteColors, paletteLocked, paletteSelected,
   onPaletteColor, onTogglePaletteLock, onTogglePaletteColor, onRandomPalette,
   onAddPaletteColor, onRemovePaletteColor,
+  paletteWcag, onPaletteWcag, colorVision, onColorVision,
   images, selectedId, onSelect, onAddImage, onRemoveImage,
   spec, onToggleHidden,
 }) {
@@ -27,6 +28,12 @@ export default function PropertiesPanel({
         <div className="palette-controls">
           <div className="segmented small"><button className={colorModel === 'rgb' ? 'on' : ''} onClick={() => setColorModel('rgb')}>RGB</button><button className={colorModel === 'cmyk' ? 'on' : ''} onClick={() => setColorModel('cmyk')}>CMYK</button></div>
           <div className="palette-count"><button onClick={onRemovePaletteColor}>−</button><span>{paletteColors.length}</span><button onClick={onAddPaletteColor}>+</button></div>
+        </div>
+        <div className="palette-accessibility">
+          <label className="bento-check"><input type="checkbox" checked={paletteWcag} onChange={(event) => onPaletteWcag(event.target.checked)} /> Контраст WCAG</label>
+          <label><span>Цветовое зрение</span><select value={colorVision} onChange={(event) => onColorVision(event.target.value)}>
+            <option value="normal">Обычное</option><option value="protanopia">Протанопия</option><option value="deuteranopia">Дейтеранопия</option><option value="tritanopia">Тританопия</option><option value="achromatopsia">Ахроматопсия</option>
+          </select></label>
         </div>
         <div className="palette-strips">
           {paletteColors.map((color, index) => {

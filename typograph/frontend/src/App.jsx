@@ -280,10 +280,11 @@ function htmlToText(html) {
 function applyEditsToHtml(html, edits) {
   const doc = new DOMParser().parseFromString(`<div id="root">${html}</div>`, 'text/html')
   const root = doc.querySelector('#root')
-  const nodes = flattenRichText(root).nodes
+  const domEdits = edits.flatMap((edit) => splitWrapperEdit(edit))
   // Идём справа налево, чтобы исходные координаты не сдвигались. Range умеет
   // заменить фрагмент даже если он пересекает несколько inline-тегов.
-  for (const edit of [...edits].sort((a, b) => b.osrc_start - a.osrc_start)) {
+  for (const edit of [...domEdits].sort((a, b) => b.osrc_start - a.osrc_start)) {
+    const nodes = flattenRichText(root).nodes
     const startEntry = nodes.find((entry) => edit.osrc_start >= entry.start && edit.osrc_start <= entry.end)
     const endEntry = [...nodes].reverse().find((entry) => edit.osrc_end >= entry.start && edit.osrc_end <= entry.end)
     if (!startEntry || !endEntry) continue
@@ -294,6 +295,21 @@ function applyEditsToHtml(html, edits) {
     range.insertNode(doc.createTextNode(edit.new))
   }
   return normalizeRichHtml(root.innerHTML)
+}
+
+// Кавычки и похожие правила меняют только оболочку фрагмента. Разделяем такую
+// правку на левую и правую границы: цветные/жирные span внутри остаются живы,
+// а вложенное тире или неразрывный пробел не затираются внешней заменой.
+function splitWrapperEdit(edit) {
+  const original = edit.original || ''
+  const next = edit.new || ''
+  if (original.length >= 2 && next.length >= 2 && original.slice(1, -1) === next.slice(1, -1)) {
+    return [
+      { ...edit, osrc_end: edit.osrc_start + 1, new: next[0] },
+      { ...edit, osrc_start: edit.osrc_end - 1, new: next[next.length - 1] },
+    ]
+  }
+  return [edit]
 }
 
 function normalizeRichHtml(html) {

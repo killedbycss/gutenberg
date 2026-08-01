@@ -101,6 +101,11 @@
     .font-status { position: absolute; top: 36px; right: 0; z-index: 20; width: 250px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); box-shadow: 0 10px 30px rgba(0,0,0,.16); font-size: 12px; line-height: 1.4; }
     .font-status[hidden] { display: none; }
     .font-status small { display: block; margin-top: 3px; color: var(--muted); }
+    .support-pop { position: fixed; z-index: 50; top: 58px; right: 14px; width: min(360px, calc(100vw - 28px)); padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: 0 14px 44px rgba(0,0,0,.18); color: var(--text); animation: pop-in .2s ease-out; }
+    .support-pop[hidden] { display: none; }
+    .support-pop strong { display: block; margin-bottom: 5px; }
+    .support-pop p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    @keyframes pop-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
 
     /* ---------- Сцена с iframe ---------- */
     .stage { flex: 1 1 auto; position: relative; background: var(--bg); }
@@ -127,6 +132,9 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (max-width: 720px) {
+      .topbar { gap: 6px; padding: 0 8px; }
+      .brand .wordmark { display: none; }
+      .brand { padding-right: 0; }
       .tab { padding: 0 9px; gap: 6px; }
       .tab .kbd { display: none; }
       .icon-btn .label { display: none; }
@@ -145,11 +153,13 @@
       <button class="tab" role="tab" data-mod="typograph">Типограф <span class="kbd">⌥2</span></button>
       <button class="tab" role="tab" data-mod="converter">Конвертер <span class="kbd">⌥3</span></button>
       <button class="tab" role="tab" data-mod="layouts">Макеты <span class="kbd">⌥4</span></button>
+      <button class="tab" role="tab" data-mod="bento">Бенто <span class="kbd">⌥5</span></button>
     </nav>
 
     <div class="spacer"></div>
 
     <div class="actions">
+      <button class="icon-btn" id="support-button" title="Поддержать проект">♡ <span class="label">Поддержать</span></button>
       <div class="font-action">
         <button class="icon-btn" id="font-upload" title="Загрузить свой шрифт для интерфейса">
           <span class="font-btn-mark">Aa+</span> <span class="label">Шрифт</span>
@@ -165,6 +175,7 @@
       </button>
     </div>
   </header>
+  <div class="support-pop" id="support-pop" role="status" hidden><strong>Спасибо!</strong><p>4 пакетика кофе стоят 100 рублей. Номер +79009498387 скопирован — по нему можно перевести.</p></div>
 
   <main class="stage" id="stage">
     <div class="loader" id="loader">
@@ -178,10 +189,10 @@
 
   <script>
     (function () {
-      var MODULES = ['spellcheck', 'typograph', 'converter', 'layouts'];
+      var MODULES = ['spellcheck', 'typograph', 'converter', 'layouts', 'bento'];
       var BROWSER_ONLY = document.documentElement.getAttribute('data-browser-only') === 'true';
       var SITE_ROOT = BROWSER_ONLY ? './github-pages/' : '/';
-      var LABELS = { spellcheck: 'Орфография', typograph: 'Типограф', converter: 'Конвертер', layouts: 'Макеты' };
+      var LABELS = { spellcheck: 'Орфография', typograph: 'Типограф', converter: 'Конвертер', layouts: 'Макеты', bento: 'Бенто' };
       var LS_KEY = 'studio.activeModule';
 
       var stage = document.getElementById('stage');
@@ -265,6 +276,7 @@
       // Создаём три iframe сразу — так состояние каждого модуля сохраняется
       // при переключении вкладок (ничего не перезагружается).
       MODULES.forEach(function (mod) {
+        if (mod === 'bento') { frames.bento = frames.layouts; loaded.bento = loaded.layouts; return; }
         var f = document.createElement('iframe');
         f.className = 'frame';
         f.title = LABELS[mod];
@@ -272,6 +284,7 @@
         f.setAttribute('data-mod', mod);
         f.addEventListener('load', function () {
           loaded[mod] = true;
+          if (mod === 'layouts') loaded.bento = true;
           try { f.contentDocument.documentElement.setAttribute('data-theme', theme); } catch (e) {}
           try { injectFont(f.contentDocument); } catch (e) {}
           updateLoader();
@@ -289,9 +302,11 @@
       function activate(mod) {
         if (MODULES.indexOf(mod) === -1) mod = MODULES[0];
         active = mod;
-        MODULES.forEach(function (m) {
-          frames[m].classList.toggle('active', m === mod);
-        });
+        Array.from(new Set(Object.keys(frames).map(function (m) { return frames[m]; }))).forEach(function (frame) { frame.classList.remove('active'); });
+        frames[mod].classList.add('active');
+        if (mod === 'layouts' || mod === 'bento') {
+          try { frames.layouts.contentWindow.postMessage({ type: 'studio-mode', mode: mod === 'bento' ? 'bento' : 'editor' }, '*'); } catch (e) {}
+        }
         tabs.forEach(function (t) {
           t.setAttribute('aria-selected', String(t.getAttribute('data-mod') === mod));
         });
@@ -309,12 +324,23 @@
       // Проверяем e.code (Digit1…), т.к. Alt+цифра на macOS даёт спецсимвол в e.key.
       window.addEventListener('keydown', function (e) {
         if (!e.altKey || e.metaKey || e.ctrlKey) return;
-        var i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code);
+        var i = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5'].indexOf(e.code);
         if (i !== -1) { e.preventDefault(); activate(MODULES[i]); }
       });
 
       document.getElementById('open-standalone').addEventListener('click', function () {
-        window.open(SITE_ROOT + 'app/' + active + '/', '_blank');
+        window.open(SITE_ROOT + 'app/' + (active === 'bento' ? 'layouts/?mode=bento' : active + '/'), '_blank');
+      });
+      window.addEventListener('message', function (event) {
+        if (event.data && event.data.type === 'studio-activate' && MODULES.indexOf(event.data.mod) !== -1) activate(event.data.mod);
+      });
+      document.getElementById('support-button').addEventListener('click', async function () {
+        var number = '+79009498387';
+        try { await navigator.clipboard.writeText(number); } catch (e) {
+          var area = document.createElement('textarea'); area.value = number; document.body.appendChild(area); area.select(); document.execCommand('copy'); area.remove();
+        }
+        var pop = document.getElementById('support-pop'); pop.hidden = false;
+        clearTimeout(window.__supportTimer); window.__supportTimer = setTimeout(function () { pop.hidden = true; }, 5500);
       });
       document.getElementById('theme-toggle').addEventListener('click', function () {
         applyTheme(theme === 'dark' ? 'light' : 'dark');

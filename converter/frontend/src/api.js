@@ -14,7 +14,6 @@ const targets = [
   { key: 'png-lossless', label: 'PNG', ext: 'png', kind: 'image', note: 'Сжатие без потери качества' },
   { key: 'jpg', label: 'JPG', ext: 'jpg', kind: 'image', note: 'JPEG с белым фоном вместо прозрачности' },
   { key: 'webp', label: 'WebP', ext: 'webp', kind: 'image', note: 'Современное изображение с прозрачностью' },
-  { key: 'webp-lossless', label: 'WebP lossless', ext: 'webp', kind: 'image', note: 'Без потери пикселей' },
   { key: 'mp4', label: 'MP4', ext: 'mp4', kind: 'media', note: 'H.264 — универсальный формат' },
   { key: 'mov', label: 'MOV', ext: 'mov', kind: 'media', note: 'QuickTime для macOS' },
   { key: 'webm-video', label: 'WebM', ext: 'webm', kind: 'media', note: 'VP9 для веба' },
@@ -125,9 +124,9 @@ export async function convertFonts(files, selectedTargets, preset = 'basic', opt
   const outputs = []
   for (const file of files) for (const target of selectedTargets) {
     if (isVideo(file)) continue
-    if (isImage(file) !== ['ico', 'jpg', 'webp', 'png-lossless', 'webp-lossless'].includes(target)) continue
+    if (isImage(file) !== ['ico', 'jpg', 'webp', 'png-lossless'].includes(target)) continue
     const blob = isImage(file) ? await convertImage(file, target, options) : await convertFont(file, target)
-    const suffix = target === 'png-lossless' ? 'png' : target === 'webp-lossless' ? 'webp' : target
+    const suffix = target === 'png-lossless' ? 'png' : target
     outputs.push({ blob, filename: `${stem(file.name)}.${suffix}` })
   }
   if (!outputs.length) throw new Error('Нет совместимых сочетаний файлов и форматов')

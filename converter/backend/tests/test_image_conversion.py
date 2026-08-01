@@ -37,7 +37,7 @@ def test_convert_to_webp():
 def test_lossless_targets_preserve_pixels():
     source = make_png()
     original = Image.open(io.BytesIO(source)).convert("RGBA")
-    for target in ("png-lossless", "webp-lossless"):
+    for target in ("png-lossless",):
         result = imagekit.convert_image(source, target)
         assert result["ok"], result.get("error")
         converted = Image.open(io.BytesIO(result["data"])).convert("RGBA")

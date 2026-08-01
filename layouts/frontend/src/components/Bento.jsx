@@ -4,7 +4,7 @@ import { makeMeasurer } from '../render/textLayout'
 import { RENDER_FONT_FAMILY } from '../layout/schema'
 import { GIFEncoder, quantize, applyPalette } from 'gifenc'
 
-export default function Bento({ items, fontReady, seed, onShuffle, onPick, animation = 'mixed', speed = 1, distance = 18, stagger = 90, easing = 'smooth', showWcag = true, fontCss = '' }) {
+export default function Bento({ items, fontReady, seed, onShuffle, onPick, animation = 'mixed', speed = 1, distance = 18, stagger = 90, easing = 'smooth', showWcag = true, colorVision = 'normal', fontCss = '' }) {
   const measurer = useMemo(() => makeMeasurer(RENDER_FONT_FAMILY), [fontReady])
   const gridRef = useRef(null)
   const [exporting, setExporting] = useState(false)
@@ -57,7 +57,7 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
 
 
   return (
-    <div className="bento">
+    <div className={`bento vision-${colorVision}`}>
       <div className="bento-head">
         <div>
           <h2 className="bento-title">Бенто-раскладки</h2>

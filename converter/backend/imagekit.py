@@ -15,8 +15,6 @@ TARGET_FORMATS = [
      "note": "Сжатое изображение; прозрачность заменяется белым фоном"},
     {"key": "webp", "label": "WebP", "ext": "webp", "kind": "image",
      "note": "Современное изображение с хорошим сжатием и прозрачностью"},
-    {"key": "webp-lossless", "label": "WebP lossless", "ext": "webp", "kind": "image",
-     "note": "Максимальное сжатие без потери пикселей"},
 ]
 
 
@@ -95,12 +93,12 @@ def convert_image(data: bytes, target: str, options: dict | None = None) -> dict
         image = _open_rgba(data, options)
         converters = {"ico": _to_ico, "jpg": _to_jpg, "webp": _to_webp,
                       "png-lossless": _to_png_lossless,
-                      "webp-lossless": _to_webp_lossless}
+                      }
         if target not in converters:
             return {"ok": False, "error": f"Неизвестный формат изображения: {target}", "warnings": []}
         quality = max(1, min(100, int(options.get("quality", 90))))
         result = converters[target](image, quality) if target in ("jpg", "webp") else converters[target](image)
-        ext = "png" if target == "png-lossless" else "webp" if target == "webp-lossless" else target
+        ext = "png" if target == "png-lossless" else target
         return {"ok": True, "data": result, "ext": ext, "outline": None, "warnings": [],
                 "width": image.width, "height": image.height}
     except Exception as exc:  # декодер/кодек не должен ронять весь пакет

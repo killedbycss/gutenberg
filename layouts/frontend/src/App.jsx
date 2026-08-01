@@ -198,7 +198,7 @@ export default function App() {
   const [loadingFont, setLoadingFont] = useState(false)
   const [fontError, setFontError] = useState(null)
 
-  const [mode, setMode] = useState('editor') // 'editor' | 'bento'
+  const [mode, setMode] = useState(() => new URLSearchParams(window.location.search).get('mode') === 'bento' ? 'bento' : 'editor')
   const [purposeId, setPurposeId] = useState(PURPOSES[0].id)
   const [variant, setVariant] = useState('top-left')
 
@@ -206,9 +206,11 @@ export default function App() {
   const [paletteColors, setPaletteColors] = useState(['#264653', '#2A9D8F', '#E9C46A', '#F4A261', '#E76F51'])
   const [paletteLocked, setPaletteLocked] = useState(new Set())
   const [paletteSelected, setPaletteSelected] = useState(new Set([0, 1, 2]))
+  const [paletteWcag, setPaletteWcag] = useState(true)
+  const [colorVision, setColorVision] = useState('normal')
   const customPalette = useMemo(
-    () => semanticPalette(paletteColors, [...paletteSelected]),
-    [paletteColors, paletteSelected],
+    () => semanticPalette(paletteColors, [...paletteSelected], paletteWcag),
+    [paletteColors, paletteSelected, paletteWcag],
   )
   const [content, setContent] = useState(DEFAULT_CONTENT)
 
@@ -222,9 +224,13 @@ export default function App() {
   const [bentoDistance, setBentoDistance] = useState(18)
   const [bentoStagger, setBentoStagger] = useState(90)
   const [bentoEasing, setBentoEasing] = useState('smooth')
-  const [bentoWcag, setBentoWcag] = useState(true)
 
   useEffect(() => { checkHealth().then(setHealth) }, [])
+  useEffect(() => {
+    const receiveMode = (event) => { if (event.data?.type === 'studio-mode') setMode(event.data.mode === 'bento' ? 'bento' : 'editor') }
+    window.addEventListener('message', receiveMode)
+    return () => window.removeEventListener('message', receiveMode)
+  }, [])
 
   const purpose = purposeById(purposeId)
   const paletteValue = paletteId === 'custom' ? customPalette : paletteId
@@ -239,8 +245,8 @@ export default function App() {
   }, [fontInfo, purpose, content, variant, paletteValue, overrides, bgColor])
 
   const bentoItems = useMemo(
-    () => (mode !== 'bento' || !fontInfo ? [] : buildBento(fontInfo.metrics, content, bentoSeed, paletteColors, bentoWcag)),
-    [mode, fontInfo, content, bentoSeed, paletteColors, bentoWcag],
+    () => (mode !== 'bento' || !fontInfo ? [] : buildBento(fontInfo.metrics, content, bentoSeed, paletteColors, paletteWcag)),
+    [mode, fontInfo, content, bentoSeed, paletteColors, paletteWcag],
   )
 
   const selected = spec ? spec.frames.find((f) => f.id === selectedId) || null : null
@@ -366,6 +372,7 @@ export default function App() {
     setBgColor(null)
     setSelectedId(null)
     setMode('editor')
+    window.parent?.postMessage({ type: 'studio-activate', mod: 'layouts' }, '*')
   }
 
   async function onExportPng() {
@@ -387,12 +394,6 @@ export default function App() {
     <div className="app">
       <div className="module-actions">
         <div className="topbar-right">
-          {fontInfo && (
-            <div className="mode-switch">
-              <button className={mode === 'editor' ? 'on' : ''} onClick={() => setMode('editor')}>Редактор</button>
-              <button className={mode === 'bento' ? 'on' : ''} onClick={() => setMode('bento')}>Бенто</button>
-            </div>
-          )}
           {!health && <span className="health-warn">Сервис метрик недоступен — запусти backend на :5070</span>}
         </div>
       </div>
@@ -407,7 +408,10 @@ export default function App() {
             <label className="field"><span className="field-label">Амплитуда · {bentoDistance}px</span><input type="range" min="4" max="48" value={bentoDistance} onChange={(e) => setBentoDistance(+e.target.value)} /></label>
             <label className="field"><span className="field-label">Задержка · {bentoStagger}мс</span><input type="range" min="0" max="240" step="10" value={bentoStagger} onChange={(e) => setBentoStagger(+e.target.value)} /></label>
             <label className="field"><span className="field-label">Характер</span><select className="select" value={bentoEasing} onChange={(e) => setBentoEasing(e.target.value)}><option value="smooth">Плавный</option><option value="spring">Пружина</option><option value="linear">Линейный</option></select></label>
-            <label className="bento-check"><input type="checkbox" checked={bentoWcag} onChange={(e) => setBentoWcag(e.target.checked)} /> Подбирать контраст WCAG</label>
+            <div className={`animation-trainer ease-${bentoEasing}`} style={{ '--bento-speed': bentoSpeed, '--bento-distance': `${bentoDistance}px` }}>
+              <div className={`trainer-square text-${bentoAnimation === 'mixed' ? 'float' : bentoAnimation}`} />
+              <code>{`animation: ${bentoAnimation === 'mixed' ? 'textFloat' : `text${bentoAnimation[0].toUpperCase()}${bentoAnimation.slice(1)}`} ${Math.round(9200 / bentoSpeed)}ms ${bentoEasing === 'linear' ? 'linear' : 'cubic-bezier(.2,.75,.2,1)'} infinite;`}</code>
+            </div>
           </div>
           <div className="tool-group anim-in"><button className="btn-ghost wide" onClick={() => setBentoSeed((s) => s + 1)}>↻ Новая композиция</button></div>
         </aside> : <Sidebar
@@ -463,7 +467,8 @@ export default function App() {
               distance={bentoDistance}
               stagger={bentoStagger}
               easing={bentoEasing}
-              showWcag={bentoWcag}
+              showWcag={paletteWcag}
+              colorVision={colorVision}
               fontCss={fontInfo.fontCss}
             />
           ) : (
@@ -485,6 +490,8 @@ export default function App() {
             onPaletteColor={onPaletteColor} onTogglePaletteLock={onTogglePaletteLock}
             onTogglePaletteColor={onTogglePaletteColor} onRandomPalette={onRandomPalette}
             onAddPaletteColor={onAddPaletteColor} onRemovePaletteColor={onRemovePaletteColor}
+            paletteWcag={paletteWcag} onPaletteWcag={setPaletteWcag}
+            colorVision={colorVision} onColorVision={setColorVision}
             images={content.images || []} selectedId={selectedId} onSelect={setSelectedId}
             onAddImage={onAddImage} onRemoveImage={onRemoveImage}
             spec={spec} onToggleHidden={onToggleHidden} />

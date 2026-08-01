@@ -148,6 +148,14 @@ body {
 .compression-levels button { border: 1px solid var(--border); border-radius: 8px; padding: 8px 4px; background: var(--surface); color: var(--muted); cursor: pointer; font: 600 12px var(--font); }
 .compression-levels button.on { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); color: var(--primary); }
 @media (max-width: 680px) { .compression-stats { grid-template-columns: 1fr; } }
+@media (max-width: 560px) {
+  .app { padding: 0 10px; }
+  .toolbar { padding: 14px 10px; }
+  .format-item { grid-template-columns: auto 1fr; }
+  .format-note { grid-column: 2; }
+  .file-id { align-items: flex-start; }
+  .card { padding: 12px; }
+}
 .fmt-otf { --acc: var(--fmt-otf); }
 .fmt-ttf { --acc: var(--fmt-ttf); }
 .fmt-woff { --acc: var(--fmt-woff); }
