@@ -90,8 +90,8 @@ export default function Preview({
 
           {selFrame && !selFrame.hidden && <g pointerEvents="none">
             <rect className="frame-sel" fill="none" x={selFrame.box.x * W} y={selFrame.box.y * H} width={selFrame.box.w * W} height={selFrame.box.h * H} />
-            <rect className="frame-coord-bg" x={selFrame.box.x * W} y={Math.max(2, selFrame.box.y * H - 27)} width={Math.min(330, selFrame.box.w * W)} height="22" rx="5" />
-            <text className="frame-coord-label" x={selFrame.box.x * W + 8} y={Math.max(17, selFrame.box.y * H - 12)}>{`x ${Math.round(selFrame.box.x * 100)}%  y ${Math.round(selFrame.box.y * 100)}%  ·  ${Math.round(selFrame.box.w * 100)}×${Math.round(selFrame.box.h * 100)}%`}</text>
+            <rect className="frame-coord-bg" x={selFrame.box.x * W} y={Math.max(2, selFrame.box.y * H - 35)} width={Math.min(430, Math.max(300, selFrame.box.w * W))} height="29" rx="6" />
+            <text className="frame-coord-label" x={selFrame.box.x * W + 10} y={Math.max(22, selFrame.box.y * H - 15)}>{`x ${Math.round(selFrame.box.x * 100)}%  y ${Math.round(selFrame.box.y * 100)}%  ·  ${Math.round(selFrame.box.w * 100)}×${Math.round(selFrame.box.h * 100)}%`}</text>
           </g>}
         </svg>
       </div>

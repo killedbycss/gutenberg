@@ -310,7 +310,7 @@ button, .card, .font-card, .format-item, .segmented button, .icon-btn, .glyph-ch
 @media (prefers-reduced-motion: reduce) {
   .toolbar, .dropzone, .cards, .font-card, .coverage { animation: none !important; }
 }
-@media (max-width:900px){.mobile-pane-tabs{left:12px;right:12px;padding:3px;gap:2px;border-color:color-mix(in srgb,var(--border) 72%,transparent);border-radius:10px;background:color-mix(in srgb,var(--surface) 94%,transparent);box-shadow:0 3px 12px rgba(0,0,0,.09)}.mobile-pane-tabs button{min-height:36px;border-radius:7px}.layout.mobile-pane-tools>.toolbar{bottom:52px;max-height:66vh;border-radius:13px 13px 0 0;border-top-color:color-mix(in srgb,var(--border) 75%,transparent);box-shadow:0 -4px 16px rgba(0,0,0,.08)}}
+@media (max-width:900px){.mobile-pane-tabs{left:12px;right:12px;padding:3px;gap:2px;overflow:hidden;touch-action:manipulation;border-color:color-mix(in srgb,var(--border) 72%,transparent);border-radius:10px;background:color-mix(in srgb,var(--surface) 94%,transparent);box-shadow:0 3px 12px rgba(0,0,0,.09)}.mobile-pane-tabs button{min-height:36px;border-radius:7px}.layout.mobile-pane-tools>.toolbar{top:8px;bottom:52px;height:auto;max-height:none;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;border-radius:13px 13px 0 0;border-top-color:color-mix(in srgb,var(--border) 75%,transparent);box-shadow:0 -4px 16px rgba(0,0,0,.08)}}
 .mobile-pane-tabs { display: none; }
 @media (max-width: 900px) {
   body { padding-bottom: 58px; }
@@ -319,5 +319,5 @@ button, .card, .font-card, .format-item, .segmented button, .icon-btn, .glyph-ch
   .mobile-pane-tabs button.on { background: var(--surface-2); color: var(--text); font-weight: 600; }
   .layout > .toolbar, .layout > .main { display: none; }
   .layout.mobile-pane-content > .main { display: flex; }
-  .layout.mobile-pane-tools > .toolbar { display: flex; position: fixed; z-index: 30; left: 0; right: 0; bottom: 56px; min-height: 0; max-height: 68vh; overflow-y: auto; margin: 0; padding: 18px 16px 28px; border: 0; border-top: 1px solid var(--border); border-radius: 16px 16px 0 0; background: var(--surface); box-shadow: 0 -12px 36px rgba(0,0,0,.14); }
+  .layout.mobile-pane-tools > .toolbar { display: flex; position: fixed; z-index: 30; top: 8px; left: 0; right: 0; bottom: 52px; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; margin: 0; padding: 18px 16px 28px; border: 0; border-top: 1px solid var(--border); border-radius: 13px 13px 0 0; background: var(--surface); box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
 }

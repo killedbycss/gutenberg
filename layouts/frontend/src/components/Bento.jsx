@@ -9,27 +9,35 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
   const gridRef = useRef(null)
   const [exporting, setExporting] = useState(false)
 
-  async function renderComposition(phase = null) {
+  async function renderComposition(sampleTime = null) {
     const grid = gridRef.current
     if (!grid) return null
       const box = grid.getBoundingClientRect(); const scale = 2
       const canvas = document.createElement('canvas'); canvas.width = Math.round(box.width * scale); canvas.height = Math.round(box.height * scale)
-      const ctx = canvas.getContext('2d'); ctx.scale(scale, scale); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, box.width, box.height)
+      const ctx = canvas.getContext('2d'); ctx.scale(scale, scale); ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#fff'; ctx.fillRect(0, 0, box.width, box.height)
+      ctx.filter = sampleTime == null ? 'none' : getComputedStyle(grid).filter
       const tiles = [...grid.querySelectorAll('.bento-tile')]
       for (let tileIndex = 0; tileIndex < tiles.length; tileIndex += 1) {
         const tile = tiles[tileIndex]
         const svg = tile.querySelector('svg'); if (!svg) continue
         const rect = { left: box.left + tile.offsetLeft, top: box.top + tile.offsetTop, width: tile.offsetWidth, height: tile.offsetHeight }; const copy = svg.cloneNode(true)
         copy.setAttribute('width', String(rect.width)); copy.setAttribute('height', String(rect.height)); copy.setAttribute('preserveAspectRatio', 'xMidYMid slice')
-        const introStart = tileIndex * .035
-        const intro = phase == null ? 1 : easeOut(clamp01((phase - introStart) / .24))
-        const textPhase = phase == null ? null : clamp01((phase - introStart - .08) / .72)
-        if (textPhase != null) copy.querySelectorAll('.bento-text').forEach((text, index) => applyTextFrame(text, clamp01(textPhase - index * Math.max(.018, stagger / 6500)), animationCss))
+        if (sampleTime != null) {
+          const liveText = [...svg.querySelectorAll('.bento-text')]
+          copy.querySelectorAll('.bento-text').forEach((text, index) => {
+            const computed = getComputedStyle(liveText[index])
+            text.style.animation = 'none'; text.style.transform = computed.transform; text.style.transformOrigin = computed.transformOrigin
+            text.style.opacity = computed.opacity; text.style.filter = computed.filter
+          })
+        }
         if (fontCss) { const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs'); const style = document.createElementNS('http://www.w3.org/2000/svg', 'style'); style.textContent = fontCss; defs.appendChild(style); copy.prepend(defs) }
         const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml' }))
         const image = await new Promise((resolve, reject) => { const value = new Image(); value.onload = () => resolve(value); value.onerror = reject; value.src = url })
-        const drift = (1 - intro) * (tileIndex % 2 ? 22 : -22)
-        ctx.save(); ctx.globalAlpha = intro; ctx.translate(drift, (1 - intro) * 14); ctx.drawImage(image, rect.left - box.left, rect.top - box.top, rect.width, rect.height); ctx.restore(); URL.revokeObjectURL(url)
+        const computed = sampleTime == null ? null : getComputedStyle(tile)
+        ctx.save(); ctx.globalAlpha = computed ? Number(computed.opacity) || 0 : 1
+        if (computed) applyInsetClip(ctx, computed.clipPath, rect.left - box.left, rect.top - box.top, rect.width, rect.height)
+        if (computed) applyTileTransform(ctx, computed.transform, rect.left - box.left, rect.top - box.top, rect.width, rect.height)
+        ctx.drawImage(image, rect.left - box.left, rect.top - box.top, rect.width, rect.height); ctx.restore(); URL.revokeObjectURL(url)
       }
       return canvas
   }
@@ -45,22 +53,34 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
 
   async function exportGif() {
     setExporting(true)
+    const animations = gridRef.current ? gridRef.current.getAnimations({ subtree: true }) : []
+    const states = animations.map((item) => ({ item, currentTime: item.currentTime, playState: item.playState }))
     try {
+      animations.forEach((item) => item.pause())
+      const durations = animations.map((item) => Number(item.effect?.getTiming().duration) || 0).filter(Number.isFinite)
+      const duration = Math.max(3200, Math.min(12000, durations.length ? Math.max(...durations) : 9200))
+      animations.forEach((item) => { item.currentTime = 0 })
       const first = await renderComposition(0); if (!first) return
       const width = Math.min(960, first.width); const height = Math.round(first.height * width / first.width)
       const frame = document.createElement('canvas'); frame.width = width; frame.height = height
       const ctx = frame.getContext('2d'); const encoder = GIFEncoder()
-      const frames = 36
+      const frames = Math.max(60, Math.min(120, Math.round(duration / 90)))
+      const delay = Math.round(duration / frames)
       for (let i = 0; i < frames; i += 1) {
-        const source = i === 0 ? first : await renderComposition(i / (frames - 1))
-        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, width, height)
+        const time = i * duration / frames
+        animations.forEach((item) => { item.currentTime = time })
+        const source = i === 0 ? first : await renderComposition(time)
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#fff'; ctx.fillRect(0, 0, width, height)
         ctx.drawImage(source, 0, 0, width, height)
         const rgba = ctx.getImageData(0, 0, width, height); const palette = quantize(rgba.data, 256); const indexed = applyPalette(rgba.data, palette)
-        encoder.writeFrame(indexed, width, height, { palette, delay: 80, repeat: 0 })
+        encoder.writeFrame(indexed, width, height, { palette, delay, repeat: 0 })
       }
       encoder.finish(); const blob = new Blob([encoder.bytes()], { type: 'image/gif' }); const url = URL.createObjectURL(blob)
       const link = document.createElement('a'); link.href = url; link.download = 'gutenberg-bento.gif'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000)
-    } finally { setExporting(false) }
+    } finally {
+      states.forEach(({ item, currentTime, playState }) => { item.currentTime = currentTime; if (playState === 'running') item.play() })
+      setExporting(false)
+    }
   }
 
 
@@ -112,19 +132,23 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
   )
 }
 
-function applyTextFrame(node, phase, customCss = '') {
-  const customName = customCss.trim().split(/\s+/)[0]?.replace(/^text/, '').toLowerCase()
-  const kind = customCss ? customName : ([...node.classList].find((name) => name.startsWith('text-'))?.slice(5) || 'float')
-  const angle = phase * Math.PI * 2
-  const wave = Math.sin(angle)
-  const transforms = {
-    float: `translate(0 ${wave * 14}px)`, reveal: `translate(0 ${(1 - phase) * 22}px)`, drift: `translate(${wave * 18}px 0)`,
-    pulse: `scale(${1 + wave * .04})`, rotate: `rotate(${wave * 4}deg)`, blur: `scale(${1 + wave * .025})`, wave: `translate(${wave * 12}px ${Math.cos(angle) * 8}px) skewX(${wave * 3}deg)`,
-  }
-  node.style.animation = 'none'; node.style.transform = transforms[kind] || transforms.float
-  node.style.opacity = kind === 'reveal' ? String(Math.min(1, phase * 3)) : '1'
-  node.style.filter = kind === 'blur' ? `blur(${Math.abs(wave) * 3}px)` : 'none'
+function applyTileTransform(ctx, transform, x, y, width, height) {
+  if (!transform || transform === 'none') return
+  const matrix = new DOMMatrix(transform)
+  ctx.translate(x + width / 2, y + height / 2)
+  ctx.transform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f)
+  ctx.translate(-(x + width / 2), -(y + height / 2))
 }
 
-function clamp01(value) { return Math.max(0, Math.min(1, value)) }
-function easeOut(value) { return 1 - Math.pow(1 - value, 3) }
+function applyInsetClip(ctx, clipPath, x, y, width, height) {
+  if (!clipPath || clipPath === 'none') return
+  const tokens = clipPath.match(/inset\(([^)]+)/)?.[1]?.trim().split(/\s+/).slice(0, 4) || []
+  if (!tokens.length) return
+  const expanded = tokens.length === 1 ? [tokens[0], tokens[0], tokens[0], tokens[0]]
+    : tokens.length === 2 ? [tokens[0], tokens[1], tokens[0], tokens[1]]
+      : tokens.length === 3 ? [tokens[0], tokens[1], tokens[2], tokens[1]] : tokens
+  const amount = (value, size) => value.endsWith('%') ? parseFloat(value) * size / 100 : parseFloat(value) || 0
+  const top = amount(expanded[0], height); const right = amount(expanded[1], width)
+  const bottom = amount(expanded[2], height); const left = amount(expanded[3], width)
+  ctx.beginPath(); ctx.rect(x + left, y + top, Math.max(0, width - left - right), Math.max(0, height - top - bottom)); ctx.clip()
+}

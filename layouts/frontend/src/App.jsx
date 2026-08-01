@@ -234,12 +234,18 @@ export default function App() {
   const [customAnimationMode, setCustomAnimationMode] = useState(false)
   const [customAnimationCss, setCustomAnimationCss] = useState('textFloat 9200ms cubic-bezier(.2,.75,.2,1) 0ms infinite normal both running')
   const [mobilePanel, setMobilePanel] = useState('canvas')
+  const [themeVersion, setThemeVersion] = useState(0)
 
   useEffect(() => { checkHealth().then(setHealth) }, [])
   useEffect(() => {
     const receiveMode = (event) => { if (event.data?.type === 'studio-mode') setMode(event.data.mode === 'bento' ? 'bento' : 'editor') }
     window.addEventListener('message', receiveMode)
     return () => window.removeEventListener('message', receiveMode)
+  }, [])
+  useEffect(() => {
+    const observer = new MutationObserver(() => setThemeVersion((value) => value + 1))
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
   }, [])
 
   const purpose = purposeById(purposeId)
@@ -252,10 +258,17 @@ export default function App() {
       purpose, metrics: fontInfo.metrics, content, variant, palette: paletteValue, measurer,
     })
     if (purpose.group === 'Книги' || purpose.group === 'Цифровые устройства') {
-      base.canvas.background.color = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#ffffff'
+      const themedBackground = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#ffffff'
+      base.canvas.background.color = themedBackground
+      if (paletteWcag) {
+        const safeInk = contrastRatio(themedBackground, '#111111') >= contrastRatio(themedBackground, '#ffffff') ? '#111111' : '#ffffff'
+        base.frames.forEach((frame) => {
+          if (frame.type === 'text' && contrastRatio(themedBackground, frame.text.color) < 4.5) frame.text.color = safeInk
+        })
+      }
     }
     return applyOverrides(base, overrides, bgColor)
-  }, [fontInfo, purpose, content, variant, paletteValue, overrides, bgColor])
+  }, [fontInfo, purpose, content, variant, paletteValue, overrides, bgColor, paletteWcag, themeVersion])
 
   const bentoItems = useMemo(
     () => (mode !== 'bento' || !fontInfo ? [] : buildBento(fontInfo.metrics, content, bentoSeed, paletteColors, paletteWcag)),

@@ -159,7 +159,7 @@ export function FontPanel({ fontInfo, loadingFont, fontError, onUploadFont }) {
   return <div className="tool-group anim-in">
     <h3>Шрифт</h3>
     <div className={`dropzone compact${loadingFont ? ' disabled' : ''}`} onClick={() => fontInput.current?.click()}>
-      <div className="dropzone-title">{loadingFont ? 'Читаю шрифт…' : fontInfo ? fontInfo.fileName : 'Загрузить шрифт'}</div>
+      <div className="dropzone-title">{loadingFont ? 'Читаю шрифт…' : fontInfo && !fontInfo.isSystem ? fontInfo.fileName : 'Загрузите шрифт'}</div>
       <div className="dropzone-hint">OTF · TTF · WOFF · WOFF2</div>
     </div>
     <input ref={fontInput} type="file" hidden accept=".otf,.ttf,.woff,.woff2,.ttc" onChange={(e) => {
