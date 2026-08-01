@@ -40,11 +40,17 @@ def analyze_image(data: bytes) -> dict:
         return {"ok": False, "kind": "image", "error": f"Не удалось прочитать изображение: {exc}"}
 
 
-def _open_rgba(data: bytes) -> Image.Image:
+def _open_rgba(data: bytes, options: dict | None = None) -> Image.Image:
     image = Image.open(io.BytesIO(data))
     image.seek(0)
     image.load()
-    return image.convert("RGBA")
+    image = image.convert("RGBA")
+    options = options or {}
+    width, height = options.get("width"), options.get("height")
+    if width or height:
+        ratio = min((width or image.width) / image.width, (height or image.height) / image.height)
+        image = image.resize((max(1, round(image.width * ratio)), max(1, round(image.height * ratio))), Image.Resampling.LANCZOS)
+    return image
 
 
 def _to_ico(image: Image.Image) -> bytes:
@@ -58,17 +64,17 @@ def _to_ico(image: Image.Image) -> bytes:
     return out.getvalue()
 
 
-def _to_jpg(image: Image.Image) -> bytes:
+def _to_jpg(image: Image.Image, quality=92) -> bytes:
     background = Image.new("RGB", image.size, "white")
     background.paste(image, mask=image.getchannel("A"))
     out = io.BytesIO()
-    background.save(out, format="JPEG", quality=92, optimize=True, progressive=True)
+    background.save(out, format="JPEG", quality=quality, optimize=True, progressive=True)
     return out.getvalue()
 
 
-def _to_webp(image: Image.Image) -> bytes:
+def _to_webp(image: Image.Image, quality=90) -> bytes:
     out = io.BytesIO()
-    image.save(out, format="WEBP", quality=90, method=6)
+    image.save(out, format="WEBP", quality=quality, method=6)
     return out.getvalue()
 
 
@@ -84,16 +90,19 @@ def _to_webp_lossless(image: Image.Image) -> bytes:
     return out.getvalue()
 
 
-def convert_image(data: bytes, target: str) -> dict:
+def convert_image(data: bytes, target: str, options: dict | None = None) -> dict:
     try:
-        image = _open_rgba(data)
+        options = options or {}
+        image = _open_rgba(data, options)
         converters = {"ico": _to_ico, "jpg": _to_jpg, "webp": _to_webp,
                       "png-lossless": _to_png_lossless,
                       "webp-lossless": _to_webp_lossless}
         if target not in converters:
             return {"ok": False, "error": f"Неизвестный формат изображения: {target}", "warnings": []}
-        result = converters[target](image)
+        quality = max(1, min(100, int(options.get("quality", 90))))
+        result = converters[target](image, quality) if target in ("jpg", "webp") else converters[target](image)
         ext = "png" if target == "png-lossless" else "webp" if target == "webp-lossless" else target
-        return {"ok": True, "data": result, "ext": ext, "outline": None, "warnings": []}
+        return {"ok": True, "data": result, "ext": ext, "outline": None, "warnings": [],
+                "width": image.width, "height": image.height}
     except Exception as exc:  # декодер/кодек не должен ронять весь пакет
         return {"ok": False, "error": f"Ошибка конвертации изображения: {exc}", "warnings": []}

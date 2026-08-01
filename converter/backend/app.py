@@ -91,6 +91,17 @@ def _preset(req) -> str:
     return value if value in fontkit.PRESETS else fontkit.DEFAULT_PRESET
 
 
+def _conversion_options(req) -> dict:
+    def number(name, low, high):
+        try:
+            value = int(req.form.get(name) or 0)
+            return max(low, min(high, value)) if value else None
+        except ValueError:
+            return None
+    return {"quality": number("quality", 1, 100) or 90,
+            "width": number("width", 1, 8192), "height": number("height", 1, 8192)}
+
+
 # --- Эндпоинты -------------------------------------------------------------
 
 @app.get("/api/health")
@@ -152,13 +163,14 @@ def convert():
         return jsonify(error="Не выбран ни один целевой формат (поле `targets`)"), 400
 
     preset = _preset(request)
+    options = _conversion_options(request)
     multiple = len(files) > 1
     manifest = {
         "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "targets": targets,
         "items": [],
     }
-    summary = {"files": len(files), "targets": targets,
+    summary = {"files": len(files), "targets": targets, "inputBytes": 0, "outputBytes": 0,
                "outputsOk": 0, "outputsFailed": 0, "warnings": [], "errors": []}
 
     zip_buffer = io.BytesIO()
@@ -168,6 +180,7 @@ def convert():
             base = _safe_base(storage.filename)
             item = {"filename": storage.filename, "size": len(data),
                     "outputs": [], "errors": []}
+            summary["inputBytes"] += len(data)
 
             if len(data) > Config.MAX_FILE_SIZE:
                 msg = f"Файл больше {Config.MAX_FILE_SIZE // (1024 * 1024)} МБ"
@@ -199,8 +212,8 @@ def convert():
                 source_kind = report.get("kind", "font")
                 if target_kind != source_kind:
                     continue
-                res = (imagekit.convert_image(data, tkey) if source_kind == "image"
-                       else mediakit.convert_media(data, storage.filename, tkey) if source_kind == "media"
+                res = (imagekit.convert_image(data, tkey, options) if source_kind == "image"
+                       else mediakit.convert_media(data, storage.filename, tkey, options) if source_kind == "media"
                        else fontkit.convert_font(data, tkey))
                 if res["ok"]:
                     suffix = "-lossless" if tkey.endswith("-lossless") else ""
@@ -216,6 +229,7 @@ def convert():
                         "warnings": res["warnings"],
                     })
                     summary["outputsOk"] += 1
+                    summary["outputBytes"] += len(res["data"])
                     for w in res["warnings"]:
                         summary["warnings"].append(
                             {"file": storage.filename, "format": tkey, "warning": w})

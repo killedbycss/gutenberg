@@ -23,8 +23,8 @@ const targets = [
 
 const ext = (name) => (name.split('.').pop() || '').toLowerCase()
 const stem = (name) => name.replace(/\.[^.]+$/, '')
-const isImage = (file) => file.type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'].includes(ext(file.name))
-const isVideo = (file) => file.type.startsWith('video/') || ['mov', 'mp4', 'webm', 'm4v'].includes(ext(file.name))
+const isVideo = (file) => file.type.startsWith('video/') || ['mov', 'mp4', 'webm', 'm4v', 'gif'].includes(ext(file.name))
+const isImage = (file) => !isVideo(file) && (file.type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'bmp'].includes(ext(file.name)))
 
 async function ensureWoff2() {
   if (!woff2Ready) woff2Ready = woff2.init(`${import.meta.env.BASE_URL}woff2.wasm`)
@@ -90,12 +90,14 @@ export async function analyzeFonts(files, preset = 'basic') {
 }
 
 const canvasBlob = (canvas, type, quality) => new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error(`Браузер не поддерживает ${type}`)), type, quality))
-async function convertImage(file, target) {
+async function convertImage(file, target, options = {}) {
   const bitmap = await createImageBitmap(file)
-  const canvas = document.createElement('canvas'); canvas.width = target === 'ico' ? Math.min(256, bitmap.width) : bitmap.width; canvas.height = target === 'ico' ? Math.min(256, bitmap.height) : bitmap.height
+  const limit = target === 'ico' ? 256 : Infinity
+  const ratio = Math.min((+options.width || bitmap.width) / bitmap.width, (+options.height || bitmap.height) / bitmap.height, limit / bitmap.width, limit / bitmap.height)
+  const canvas = document.createElement('canvas'); canvas.width = Math.max(1, Math.round(bitmap.width * ratio)); canvas.height = Math.max(1, Math.round(bitmap.height * ratio))
   const ctx = canvas.getContext('2d'); if (target === 'jpg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height) }
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close()
-  const png = await canvasBlob(canvas, target === 'jpg' ? 'image/jpeg' : target.startsWith('webp') ? 'image/webp' : 'image/png', target.endsWith('lossless') ? 1 : .92)
+  const png = await canvasBlob(canvas, target === 'jpg' ? 'image/jpeg' : target.startsWith('webp') ? 'image/webp' : 'image/png', target.endsWith('lossless') ? 1 : (+options.quality || 90) / 100)
   if (target !== 'ico') return png
   const bytes = new Uint8Array(await png.arrayBuffer()); const out = new Uint8Array(22 + bytes.length); const view = new DataView(out.buffer)
   view.setUint16(0, 0, true); view.setUint16(2, 1, true); view.setUint16(4, 1, true); out[6] = canvas.width === 256 ? 0 : canvas.width; out[7] = canvas.height === 256 ? 0 : canvas.height
@@ -112,25 +114,27 @@ async function convertFont(file, target) {
   return new Blob([font.write({ type: target, hinting: true, kerning: true })], { type: `font/${target}` })
 }
 
-export async function convertFonts(files, selectedTargets, preset = 'basic') {
+export async function convertFonts(files, selectedTargets, preset = 'basic', options = {}) {
   if (!BROWSER_ONLY) {
     const form = new FormData(); files.forEach((file) => form.append('fonts', file, file.name)); selectedTargets.forEach((target) => form.append('targets', target)); form.append('preset', preset)
-    const res = await fetch(`${API_BASE}/api/convert`, { method: 'POST', body: form }); if (!res.ok) throw new Error('Ошибка конвертации')
-    return { blob: await res.blob(), summary: null, filename: filenameFromDisposition(res.headers.get('Content-Disposition')) || 'converted-files.zip' }
+    Object.entries(options).forEach(([key, value]) => { if (value !== '') form.append(key, value) })
+    const res = await fetch(`${API_BASE}/api/convert`, { method: 'POST', body: form }); if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Ошибка конвертации')
+    return { blob: await res.blob(), summary: decodeSummary(res.headers.get('X-Summary')), filename: filenameFromDisposition(res.headers.get('Content-Disposition')) || 'converted-files.zip' }
   }
   const outputs = []
   for (const file of files) for (const target of selectedTargets) {
     if (isVideo(file)) continue
     if (isImage(file) !== ['ico', 'jpg', 'webp', 'png-lossless', 'webp-lossless'].includes(target)) continue
-    const blob = isImage(file) ? await convertImage(file, target) : await convertFont(file, target)
+    const blob = isImage(file) ? await convertImage(file, target, options) : await convertFont(file, target)
     const suffix = target === 'png-lossless' ? 'png' : target === 'webp-lossless' ? 'webp' : target
     outputs.push({ blob, filename: `${stem(file.name)}.${suffix}` })
   }
   if (!outputs.length) throw new Error('Нет совместимых сочетаний файлов и форматов')
   // GitHub Pages не может сформировать серверный ZIP: браузер скачивает готовые файлы по очереди.
   outputs.slice(1).forEach(({ blob, filename }, index) => setTimeout(() => downloadBlob(blob, filename), 250 * (index + 1)))
-  return { blob: outputs[0].blob, filename: outputs[0].filename, summary: { files: files.length, targets: selectedTargets, converted: outputs.length, failed: 0, warnings: [] } }
+  return { blob: outputs[0].blob, filename: outputs[0].filename, summary: { files: files.length, targets: selectedTargets, outputsOk: outputs.length, outputsFailed: 0, inputBytes: files.reduce((sum, file) => sum + file.size, 0), outputBytes: outputs.reduce((sum, output) => sum + output.blob.size, 0), warnings: [], errors: [] } }
 }
 
+function decodeSummary(value) { try { return value ? JSON.parse(decodeURIComponent(escape(atob(value)))) : null } catch { return null } }
 function filenameFromDisposition(value) { const match = value && /filename="?([^";]+)"?/.exec(value); return match ? match[1] : null }
 export function downloadBlob(blob, filename) { const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = filename; document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000) }

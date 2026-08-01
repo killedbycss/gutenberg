@@ -3,6 +3,7 @@ import Dropzone from './components/Dropzone.jsx'
 import FormatPicker from './components/FormatPicker.jsx'
 import FontCard from './components/FontCard.jsx'
 import ResultBanner from './components/ResultBanner.jsx'
+import CompressionPanel from './components/CompressionPanel.jsx'
 import { fetchFormats, analyzeFonts, convertFonts, downloadBlob } from './api.js'
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
   const [converting, setConverting] = useState(false)
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
+  const [conversionOptions, setConversionOptions] = useState({ quality: 90, width: '', height: '' })
   const idRef = useRef(0)
 
   // Загрузка метаданных форматов + разумные форматы по умолчанию.
@@ -113,7 +115,7 @@ export default function App() {
       const targets = formats.targets
         .filter((t) => selected.has(t.key) && (fileKinds.size === 0 || fileKinds.has(t.kind)))
         .map((t) => t.key)
-      const res = await convertFonts(files, targets, preset)
+      const res = await convertFonts(files, targets, preset, conversionOptions)
       downloadBlob(res.blob, res.filename)
       setResult(res)
     } catch (e) {
@@ -152,6 +154,9 @@ export default function App() {
 
         <main className="main">
           <Dropzone onFiles={addFiles} disabled={busy || converting} />
+
+          <CompressionPanel items={items} options={conversionOptions}
+            onChange={(patch) => { setConversionOptions((value) => ({ ...value, ...patch })); setResult(null) }} result={result} />
 
           {result && (
             <ResultBanner

@@ -14,21 +14,24 @@ export default function FormatPicker({
   converting,
   onConvert,
 }) {
+  const groups = [
+    ['font', 'Шрифты'],
+    ['image', 'Изображения'],
+    ['media', 'Видео и GIF'],
+  ]
   return (
     <aside className="toolbar">
       <div className="tool-group target-formats-group">
         <h3>Целевые форматы</h3>
         <div className="format-list">
-          {targets.map((t) => {
+          {groups.map(([kind, title]) => <div className="format-section" key={kind}>
+            <div className="format-group">{title}</div>
+            {targets.filter((target) => target.kind === kind).map((t) => {
             const isWoff2 = t.key === 'woff2'
             const typeBlocked = fileCount > 0 && fileKinds.size > 0 && !fileKinds.has(t.kind)
             const blocked = (isWoff2 && !woff2) || typeBlocked
             const on = selected.has(t.key) && !typeBlocked
             return (
-              <React.Fragment key={t.key}>
-              {(t.key === 'otf' || t.key === 'png-lossless' || t.key === 'mp4') && (
-                <div className="format-group">{t.kind === 'image' ? 'Изображения' : t.kind === 'media' ? 'Видео и GIF' : 'Шрифты'}</div>
-              )}
               <label
                 className={`format-item${on ? ' on' : ''}${blocked ? ' blocked' : ''}`}
                 title={typeBlocked ? `Только для ${t.kind === 'image' ? 'изображений' : 'шрифтов'}` : blocked ? 'WOFF2 недоступен: на сервере нет brotli' : t.note}
@@ -39,12 +42,11 @@ export default function FormatPicker({
                   disabled={blocked}
                   onChange={() => onToggle(t.key)}
                 />
-                <span className={`fmt-badge fmt-${t.key}`}>{t.label}</span>
+                <span className="fmt-badge">{t.label}</span>
                 <span className="format-note">{t.note}</span>
               </label>
-              </React.Fragment>
             )
-          })}
+          })}</div>)}
         </div>
       </div>
 

@@ -39,24 +39,32 @@ def analyze_media(data: bytes, filename: str = "media") -> dict:
                       "duration": seconds}}
 
 
-def convert_media(data: bytes, filename: str, target: str) -> dict:
+def convert_media(data: bytes, filename: str, target: str, options: dict | None = None) -> dict:
     suffix = os.path.splitext(filename)[1] or ".bin"
     out_ext = {"mp4": "mp4", "mov": "mov", "webm-video": "webm", "gif-video": "gif"}.get(target)
     if not out_ext:
         return {"ok": False, "error": f"Неизвестный формат медиа: {target}", "warnings": []}
+    options = options or {}
+    quality = max(1, min(100, int(options.get("quality", 82))))
+    crf = str(round(36 - quality * .24))
+    width, height = options.get("width"), options.get("height")
+    scale = []
+    if width or height:
+        scale = ["-vf", f"scale={width or -2}:{height or -2}:force_original_aspect_ratio=decrease"]
     with tempfile.TemporaryDirectory() as directory:
         source = os.path.join(directory, f"source{suffix}")
         output = os.path.join(directory, f"result.{out_ext}")
         with open(source, "wb") as stream:
             stream.write(data)
         if target == "mp4":
-            args = ["-i", source, "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac", "-movflags", "+faststart", output]
+            args = ["-i", source, *scale, "-c:v", "libx264", "-crf", crf, "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac", "-movflags", "+faststart", output]
         elif target == "mov":
-            args = ["-i", source, "-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p", "-c:a", "aac", output]
+            args = ["-i", source, *scale, "-c:v", "libx264", "-crf", crf, "-pix_fmt", "yuv420p", "-c:a", "aac", output]
         elif target == "webm-video":
-            args = ["-i", source, "-c:v", "libvpx-vp9", "-crf", "28", "-b:v", "0", "-c:a", "libopus", output]
+            args = ["-i", source, *scale, "-c:v", "libvpx-vp9", "-crf", crf, "-b:v", "0", "-c:a", "libopus", output]
         else:
-            args = ["-i", source, "-vf", "fps=12,scale='min(960,iw)':-1:flags=lanczos", "-loop", "0", output]
+            gif_width = width or 960
+            args = ["-i", source, "-vf", f"fps=12,scale='min({gif_width},iw)':-1:flags=lanczos", "-loop", "0", output]
         result = _run(args)
         if result.returncode or not os.path.exists(output):
             message = result.stderr.decode("utf-8", "replace").strip().splitlines()[-1:]
