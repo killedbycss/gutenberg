@@ -26,8 +26,8 @@ export default function FormatPicker({
             const on = selected.has(t.key) && !typeBlocked
             return (
               <React.Fragment key={t.key}>
-              {(t.key === 'otf' || t.key === 'ico') && (
-                <div className="format-group">{t.kind === 'image' ? 'Изображения' : 'Шрифты'}</div>
+              {(t.key === 'otf' || t.key === 'png-lossless' || t.key === 'mp4') && (
+                <div className="format-group">{t.kind === 'image' ? 'Изображения' : t.kind === 'media' ? 'Видео и GIF' : 'Шрифты'}</div>
               )}
               <label
                 className={`format-item${on ? ' on' : ''}${blocked ? ' blocked' : ''}`}

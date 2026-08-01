@@ -21,49 +21,53 @@ function detectLang(value, fallback = 'ru') {
 }
 
 function browserCorrect({ text, enabledTypes, enDashStyle, exceptions, defaultLang }) {
-  let result = text
   const edits = []
   const protectedText = (value) => exceptions.some((word) => word && value.toLowerCase().includes(word.toLowerCase()))
-  const apply = (regex, replacement, type, rule, message) => {
-    result = result.replace(regex, (...args) => {
-      const original = args[0]
-      const offset = args.at(-2)
-      if (protectedText(original)) return original
-      // String.prototype.replace раскрывает $1/$2 только когда строка передана
-      // непосредственно в replace. Здесь используется callback, поэтому делаем
-      // подстановку групп явно, иначе в результат попадали буквальные "$1".
+  const collect = (regex, replacement, type, rule, message) => {
+    for (const match of text.matchAll(regex)) {
+      const original = match[0]; const offset = match.index
+      if (protectedText(original)) continue
+      const args = [...match, offset, text]
       const next = typeof replacement === 'function'
         ? replacement(...args)
-        : replacement.replace(/\$(\d+)/g, (_, index) => args[Number(index)] ?? '')
-      if (next === original) return original
-      const finalStart = offset
-      edits.push({ id: edits.length, start: finalStart, end: finalStart + next.length,
-        osrc_start: finalStart, osrc_end: finalStart + original.length, original, new: next,
+        : replacement.replace(/\$(\d+)/g, (_, index) => match[Number(index)] ?? '')
+      if (next === original) continue
+      edits.push({ start: offset, end: offset + next.length, osrc_start: offset,
+        osrc_end: offset + original.length, original, new: next,
         rule_type: type, rule, message, lang: detectLang(original, defaultLang) })
-      return next
-    })
+    }
   }
   if (enabledTypes.includes('quotes')) {
-    apply(/"([^"\n]+)"/g, (_, inner) => `«${inner}»`, 'quotes', 'double_quotes', 'Типографские кавычки')
-    apply(/(?<=[A-Za-zА-Яа-яЁё])'(?=[A-Za-zА-Яа-яЁё]|\b)/g, '’', 'quotes', 'apostrophe', 'Апостроф')
+    collect(/"([^"\n]+)"/g, (_, inner) => `«${inner}»`, 'quotes', 'double_quotes', 'Типографские кавычки')
+    collect(/(?<=[A-Za-zА-Яа-яЁё])'(?=[A-Za-zА-Яа-яЁё]|\b)/g, '’', 'quotes', 'apostrophe', 'Апостроф')
   }
   if (enabledTypes.includes('dashes')) {
-    apply(/(?<![-\d])(\d{1,4})\s*-\s*(\d{1,4})(?![-\d])/g, '$1–$2', 'dashes', 'range_dash', 'Тире диапазона')
-    apply(/^([ \t]*)-{1,2}[ \t]+(?=\S)/gm, '$1— ', 'dashes', 'dialogue_dash', 'Тире в диалоге')
-    apply(/(?<=\S)[ \t]+-{1,2}[ \t]+(?=\S)/g, (value, offset, whole) => {
+    collect(/(?<![-\d])(\d{1,4})\s*-\s*(\d{1,4})(?![-\d])/g, '$1–$2', 'dashes', 'range_dash', 'Тире диапазона')
+    collect(/^([ \t]*)-{1,2}[ \t]+(?=\S)/gm, '$1— ', 'dashes', 'dialogue_dash', 'Тире в диалоге')
+    collect(/(?<=\S)[ \t]+-{1,2}[ \t]+(?=\S)/g, (value, offset, whole) => {
       const lang = detectLang(whole, defaultLang)
       return lang === 'en' ? (enDashStyle === 'uk' ? ' – ' : '—') : ' — '
     }, 'dashes', 'thought_dash', 'Тире в предложении')
   }
   if (enabledTypes.includes('nbsp')) {
-    apply(/(^|[^A-Za-zА-Яа-яЁё0-9'’-])([A-Za-zА-Яа-яЁё]{1,2}) (?=[A-Za-zА-Яа-яЁё0-9«"“„‘(])/g,
+    collect(/(^|[^A-Za-zА-Яа-яЁё0-9'’-])([A-Za-zА-Яа-яЁё]{1,2}) (?=[A-Za-zА-Яа-яЁё0-9«"“„‘(])/g,
       (all, before, word) => `${before}${word}\u00a0`, 'nbsp', 'short_word_nbsp', 'Неразрывный пробел')
-    apply(/([A-Za-zА-Яа-яЁё])\.\s+([A-Za-zА-Яа-яЁё])\.\s+([A-Za-zА-Яа-яЁё]{2,})/g,
+    collect(/([A-Za-zА-Яа-яЁё])\.\s+([A-Za-zА-Яа-яЁё])\.\s+([A-Za-zА-Яа-яЁё]{2,})/g,
       '$1.\u00a0$2.\u00a0$3', 'nbsp', 'initials_nbsp', 'Неразрывный пробел между инициалами')
-    apply(/(\S) ([—–])(?= )/g, '$1\u00a0$2', 'nbsp', 'dash_nbsp', 'Неразрывный пробел перед тире')
+    collect(/(\S) ([—–])(?= )/g, '$1\u00a0$2', 'nbsp', 'dash_nbsp', 'Неразрывный пробел перед тире')
   }
-  edits.sort((a, b) => a.start - b.start).forEach((edit, id) => { edit.id = id })
-  return { original: text, result, edits, count: edits.length }
+  // Правила могут найти один и тот же фрагмент. Оставляем первое правило,
+  // затем применяем независимые правки справа налево в исходных координатах.
+  const accepted = []
+  edits.sort((a, b) => a.osrc_start - b.osrc_start || b.osrc_end - a.osrc_end).forEach((edit) => {
+    if (!accepted.some((item) => edit.osrc_start < item.osrc_end && edit.osrc_end > item.osrc_start)) accepted.push(edit)
+  })
+  let result = text
+  ;[...accepted].sort((a, b) => b.osrc_start - a.osrc_start).forEach((edit) => {
+    result = result.slice(0, edit.osrc_start) + edit.new + result.slice(edit.osrc_end)
+  })
+  accepted.forEach((edit, id) => { edit.id = id; edit.start = edit.osrc_start })
+  return { original: text, result, edits: accepted, count: accepted.length }
 }
 
 export async function correct(options) {

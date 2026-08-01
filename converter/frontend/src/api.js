@@ -11,13 +11,20 @@ const targets = [
   { key: 'woff', label: 'WOFF', ext: 'woff', kind: 'font', note: 'Веб-шрифт с широкой поддержкой' },
   { key: 'woff2', label: 'WOFF2', ext: 'woff2', kind: 'font', note: 'Компактный современный веб-шрифт' },
   { key: 'ico', label: 'ICO', ext: 'ico', kind: 'image', note: 'Иконка до 256×256' },
+  { key: 'png-lossless', label: 'PNG', ext: 'png', kind: 'image', note: 'Сжатие без потери качества' },
   { key: 'jpg', label: 'JPG', ext: 'jpg', kind: 'image', note: 'JPEG с белым фоном вместо прозрачности' },
   { key: 'webp', label: 'WebP', ext: 'webp', kind: 'image', note: 'Современное изображение с прозрачностью' },
+  { key: 'webp-lossless', label: 'WebP lossless', ext: 'webp', kind: 'image', note: 'Без потери пикселей' },
+  { key: 'mp4', label: 'MP4', ext: 'mp4', kind: 'media', note: 'H.264 — универсальный формат' },
+  { key: 'mov', label: 'MOV', ext: 'mov', kind: 'media', note: 'QuickTime для macOS' },
+  { key: 'webm-video', label: 'WebM', ext: 'webm', kind: 'media', note: 'VP9 для веба' },
+  { key: 'gif-video', label: 'GIF', ext: 'gif', kind: 'media', note: 'Зацикленная анимация' },
 ]
 
 const ext = (name) => (name.split('.').pop() || '').toLowerCase()
 const stem = (name) => name.replace(/\.[^.]+$/, '')
 const isImage = (file) => file.type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'].includes(ext(file.name))
+const isVideo = (file) => file.type.startsWith('video/') || ['mov', 'mp4', 'webm', 'm4v'].includes(ext(file.name))
 
 async function ensureWoff2() {
   if (!woff2Ready) woff2Ready = woff2.init(`${import.meta.env.BASE_URL}woff2.wasm`)
@@ -59,6 +66,7 @@ function fontReport(file, data) {
 }
 
 async function readBrowserFile(file) {
+  if (isVideo(file)) return { filename: file.name, size: file.size, ok: true, kind: 'media', source: { key: ext(file.name), label: ext(file.name).toUpperCase() }, media: {} }
   if (isImage(file)) {
     const info = await imageInfo(file)
     return { filename: file.name, size: file.size, ok: true, kind: 'image', source: { key: ext(file.name), label: ext(file.name).toUpperCase() },
@@ -87,7 +95,7 @@ async function convertImage(file, target) {
   const canvas = document.createElement('canvas'); canvas.width = target === 'ico' ? Math.min(256, bitmap.width) : bitmap.width; canvas.height = target === 'ico' ? Math.min(256, bitmap.height) : bitmap.height
   const ctx = canvas.getContext('2d'); if (target === 'jpg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height) }
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close()
-  const png = await canvasBlob(canvas, target === 'jpg' ? 'image/jpeg' : target === 'webp' ? 'image/webp' : 'image/png', .92)
+  const png = await canvasBlob(canvas, target === 'jpg' ? 'image/jpeg' : target.startsWith('webp') ? 'image/webp' : 'image/png', target.endsWith('lossless') ? 1 : .92)
   if (target !== 'ico') return png
   const bytes = new Uint8Array(await png.arrayBuffer()); const out = new Uint8Array(22 + bytes.length); const view = new DataView(out.buffer)
   view.setUint16(0, 0, true); view.setUint16(2, 1, true); view.setUint16(4, 1, true); out[6] = canvas.width === 256 ? 0 : canvas.width; out[7] = canvas.height === 256 ? 0 : canvas.height
@@ -112,9 +120,11 @@ export async function convertFonts(files, selectedTargets, preset = 'basic') {
   }
   const outputs = []
   for (const file of files) for (const target of selectedTargets) {
-    if (isImage(file) !== ['ico', 'jpg', 'webp'].includes(target)) continue
+    if (isVideo(file)) continue
+    if (isImage(file) !== ['ico', 'jpg', 'webp', 'png-lossless', 'webp-lossless'].includes(target)) continue
     const blob = isImage(file) ? await convertImage(file, target) : await convertFont(file, target)
-    outputs.push({ blob, filename: `${stem(file.name)}.${target}` })
+    const suffix = target === 'png-lossless' ? 'png' : target === 'webp-lossless' ? 'webp' : target
+    outputs.push({ blob, filename: `${stem(file.name)}.${suffix}` })
   }
   if (!outputs.length) throw new Error('Нет совместимых сочетаний файлов и форматов')
   // GitHub Pages не может сформировать серверный ZIP: браузер скачивает готовые файлы по очереди.

@@ -3,6 +3,12 @@ import { hexToCmyk, hexToRgb, cmykToHex } from '../layout/color'
 import { ROLE_LABEL } from '../layout/schema'
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0))
+const normalizeHex = (value) => /^#?[0-9a-f]{6}$/i.test(value.trim()) ? `#${value.trim().replace('#', '')}` : null
+const rgbaToHex = (value) => {
+  const match = value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i)
+  if (!match) return null
+  return `#${match.slice(1, 4).map((part) => Math.max(0, Math.min(255, +part)).toString(16).padStart(2, '0')).join('')}`
+}
 
 export default function PropertiesPanel({
   frame, onMove, paletteColors, paletteLocked, paletteSelected,
@@ -36,8 +42,8 @@ export default function PropertiesPanel({
               <button onClick={() => onTogglePaletteLock(index)}>{paletteLocked.has(index) ? '●' : '○'}</button>
             </div>
             {colorModel === 'rgb' && <div className="strip-rgb">
-              <label><span>HEX</span><input readOnly value={color.toUpperCase()} onClick={(event) => event.currentTarget.select()} aria-label={`HEX цвета ${index + 1}`} /></label>
-              <label><span>RGBA</span><input readOnly value={rgba} onClick={(event) => event.currentTarget.select()} aria-label={`RGBA цвета ${index + 1}`} /></label>
+              <label><span>HEX</span><input key={`hex-${color}`} defaultValue={color.toUpperCase()} onBlur={(event) => { const next = normalizeHex(event.target.value); if (next) onPaletteColor(index, next); else event.target.value = color.toUpperCase() }} aria-label={`HEX цвета ${index + 1}`} /></label>
+              <label><span>RGBA</span><input key={`rgba-${color}`} defaultValue={rgba} onBlur={(event) => { const next = rgbaToHex(event.target.value); if (next) onPaletteColor(index, next); else event.target.value = rgba }} aria-label={`RGBA цвета ${index + 1}`} /></label>
             </div>}
             {colorModel === 'cmyk' && <div className="strip-cmyk">{['c','m','y','k'].map((channel) => <label key={channel}><span>{channel.toUpperCase()}</span><input type="number" min="0" max="100" value={cmyk[channel]} onChange={(event) => onPaletteColor(index, cmykToHex({...cmyk, [channel]: Math.max(0, Math.min(100, +event.target.value))}))} /></label>)}</div>}
             </div>

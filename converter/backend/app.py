@@ -32,6 +32,7 @@ from flask_cors import CORS
 
 import fontkit
 import imagekit
+import mediakit
 from config import Config
 
 app = Flask(__name__)
@@ -42,17 +43,21 @@ CORS(app, expose_headers=["X-Summary"])
 _TARGET_FORMATS = [
     *[{**f, "kind": "font"} for f in fontkit.TARGET_FORMATS],
     *imagekit.TARGET_FORMATS,
+    *mediakit.TARGET_FORMATS,
 ]
 _TARGETS_BY_KEY = {f["key"]: f for f in _TARGET_FORMATS}
 _VALID_TARGETS = set(_TARGETS_BY_KEY)
 
 
-def _analyze_data(data: bytes, preset: str) -> dict:
+def _analyze_data(data: bytes, preset: str, filename: str = "") -> dict:
     # Сигнатуры sfnt позволяют не пытаться открывать шрифты через Pillow.
     if data[:4] in (b"wOFF", b"wOF2", b"OTTO", b"true", b"typ1", b"ttcf", b"\x00\x01\x00\x00"):
         report = fontkit.analyze_font(data, preset)
         report["kind"] = "font"
         return report
+    extension = os.path.splitext(filename or "")[1].lower()
+    if extension in (".mov", ".mp4", ".webm", ".m4v", ".gif"):
+        return mediakit.analyze_media(data, filename)
     return imagekit.analyze_image(data)
 
 
@@ -126,7 +131,7 @@ def analyze():
                 "error": f"Файл больше {Config.MAX_FILE_SIZE // (1024 * 1024)} МБ",
             })
             continue
-        report = _analyze_data(data, preset)
+        report = _analyze_data(data, preset, storage.filename)
         report["filename"] = storage.filename
         report["size"] = len(data)
         reports.append(report)
@@ -172,7 +177,7 @@ def convert():
                 continue
 
             # Контекст источника (формат, метаданные, покрытие) — в manifest.
-            report = _analyze_data(data, preset)
+            report = _analyze_data(data, preset, storage.filename)
             item["source"] = report.get("source")
             item["metadata"] = report.get("metadata")
             item["coverage"] = (report.get("coverage") or {}).get("categories") \
@@ -195,9 +200,11 @@ def convert():
                 if target_kind != source_kind:
                     continue
                 res = (imagekit.convert_image(data, tkey) if source_kind == "image"
+                       else mediakit.convert_media(data, storage.filename, tkey) if source_kind == "media"
                        else fontkit.convert_font(data, tkey))
                 if res["ok"]:
-                    out_name = f"{base}.{res['ext']}"
+                    suffix = "-lossless" if tkey.endswith("-lossless") else ""
+                    out_name = f"{base}{suffix}.{res['ext']}"
                     arcname = f"{base}/{out_name}" if multiple else out_name
                     zf.writestr(arcname, res["data"])
                     item["outputs"].append({
@@ -263,7 +270,7 @@ def webfont():
     data = storage.read()
     if not data or len(data) > Config.MAX_FILE_SIZE:
         return jsonify(error="Пустой или слишком большой файл"), 413
-    report = _analyze_data(data, fontkit.DEFAULT_PRESET)
+    report = _analyze_data(data, fontkit.DEFAULT_PRESET, storage.filename)
     if not report.get("ok") or report.get("kind") != "font":
         return jsonify(error=report.get("error", "Формат шрифта не поддерживается")), 422
     outputs = {}

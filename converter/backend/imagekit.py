@@ -7,12 +7,16 @@ from PIL import Image, UnidentifiedImageError
 
 
 TARGET_FORMATS = [
+    {"key": "png-lossless", "label": "PNG", "ext": "png", "kind": "image",
+     "note": "Сжатие без потери качества и прозрачности"},
     {"key": "ico", "label": "ICO", "ext": "ico", "kind": "image",
      "note": "Иконка Windows с несколькими размерами до 256×256"},
     {"key": "jpg", "label": "JPG", "ext": "jpg", "kind": "image",
      "note": "Сжатое изображение; прозрачность заменяется белым фоном"},
     {"key": "webp", "label": "WebP", "ext": "webp", "kind": "image",
      "note": "Современное изображение с хорошим сжатием и прозрачностью"},
+    {"key": "webp-lossless", "label": "WebP lossless", "ext": "webp", "kind": "image",
+     "note": "Максимальное сжатие без потери пикселей"},
 ]
 
 
@@ -68,13 +72,28 @@ def _to_webp(image: Image.Image) -> bytes:
     return out.getvalue()
 
 
+def _to_png_lossless(image: Image.Image) -> bytes:
+    out = io.BytesIO()
+    image.save(out, format="PNG", optimize=True, compress_level=9)
+    return out.getvalue()
+
+
+def _to_webp_lossless(image: Image.Image) -> bytes:
+    out = io.BytesIO()
+    image.save(out, format="WEBP", lossless=True, method=6)
+    return out.getvalue()
+
+
 def convert_image(data: bytes, target: str) -> dict:
     try:
         image = _open_rgba(data)
-        converters = {"ico": _to_ico, "jpg": _to_jpg, "webp": _to_webp}
+        converters = {"ico": _to_ico, "jpg": _to_jpg, "webp": _to_webp,
+                      "png-lossless": _to_png_lossless,
+                      "webp-lossless": _to_webp_lossless}
         if target not in converters:
             return {"ok": False, "error": f"Неизвестный формат изображения: {target}", "warnings": []}
         result = converters[target](image)
-        return {"ok": True, "data": result, "ext": target, "outline": None, "warnings": []}
+        ext = "png" if target == "png-lossless" else "webp" if target == "webp-lossless" else target
+        return {"ok": True, "data": result, "ext": ext, "outline": None, "warnings": []}
     except Exception as exc:  # декодер/кодек не должен ронять весь пакет
         return {"ok": False, "error": f"Ошибка конвертации изображения: {exc}", "warnings": []}

@@ -76,10 +76,11 @@ function generateCoolors(random = Math.random, count = 5) {
   ))
 }
 
-function semanticPalette(colors, indexes = [0, 1, 2]) {
+function semanticPalette(colors, indexes = [0, 1, 2], enforceContrast = true) {
   const active = indexes.map((i) => colors[i]).filter(Boolean)
   const candidates = active.length ? active : colors
-  let best = { bg: candidates[0] || '#ffffff', fg: '#111111', ratio: 1 }
+  let best = { bg: candidates[0] || '#ffffff', fg: candidates[1] || '#111111', ratio: contrastRatio(candidates[0] || '#fff', candidates[1] || '#111') }
+  if (!enforceContrast) return { bg: best.bg, fg: best.fg, accent: candidates[2] || best.fg, muted: candidates[3] || candidates[2] || best.fg, contrast: Math.round(best.ratio * 100) / 100, wcag: best.ratio >= 7 ? 'AAA' : best.ratio >= 4.5 ? 'AA' : 'fail' }
   for (const bg of candidates) {
     for (const fg of [...candidates, '#111111', '#ffffff']) {
       if (bg === fg) continue
@@ -140,7 +141,7 @@ const BENTO_COPY_EN = [
   { headline: 'Rhythm\nmatters', subhead: 'Type gives ideas a voice', body: 'Every format continues one story.', caption: 'series · 2026' },
 ]
 
-function buildBento(metrics, content, seed, paletteColors) {
+function buildBento(metrics, content, seed, paletteColors, enforceContrast) {
   const measurer = makeMeasurer(RENDER_FONT_FAMILY)
   const r = mulberry32(seed * 7 + 3)
   const slots = BENTO_GRIDS[Math.floor(r() * BENTO_GRIDS.length)]
@@ -150,7 +151,7 @@ function buildBento(metrics, content, seed, paletteColors) {
     const purpose = purposeById(purposeId)
     const count = paletteColors.length
     const paletteIndexes = [index % count, (index + 1) % count, (index + 2) % count]
-    const palette = semanticPalette(paletteColors, paletteIndexes)
+    const palette = semanticPalette(paletteColors, paletteIndexes, enforceContrast)
     const variant = VARIANT_OPTIONS[Math.floor(r() * VARIANT_OPTIONS.length)].id
     const copy = metrics.hasCyrillic === false ? BENTO_COPY_EN : BENTO_COPY
     const sample = copy[(Math.floor(r() * copy.length) + index) % copy.length]
@@ -162,7 +163,7 @@ function buildBento(metrics, content, seed, paletteColors) {
     return {
       cols: slot.cols, rows: slot.rows,
       purposeId, purposeLabel: purpose.label, palette, paletteIndexes, variant, content: itemContent,
-      textAnimation: ['float', 'reveal', 'drift', 'pulse'][Math.floor(r() * 4)],
+      textAnimation: ['float', 'reveal', 'drift', 'pulse', 'rotate', 'blur', 'wave'][Math.floor(r() * 7)],
       spec: generateLayout({ purpose, metrics, content: itemContent, variant, palette, measurer }),
     }
   })
@@ -217,6 +218,10 @@ export default function App() {
   const [bentoSeed, setBentoSeed] = useState(1)
   const [bentoAnimation, setBentoAnimation] = useState('mixed')
   const [bentoSpeed, setBentoSpeed] = useState(1)
+  const [bentoDistance, setBentoDistance] = useState(18)
+  const [bentoStagger, setBentoStagger] = useState(90)
+  const [bentoEasing, setBentoEasing] = useState('smooth')
+  const [bentoWcag, setBentoWcag] = useState(true)
 
   useEffect(() => { checkHealth().then(setHealth) }, [])
 
@@ -233,8 +238,8 @@ export default function App() {
   }, [fontInfo, purpose, content, variant, paletteValue, overrides, bgColor])
 
   const bentoItems = useMemo(
-    () => (mode !== 'bento' || !fontInfo ? [] : buildBento(fontInfo.metrics, content, bentoSeed, paletteColors)),
-    [mode, fontInfo, content, bentoSeed, paletteColors],
+    () => (mode !== 'bento' || !fontInfo ? [] : buildBento(fontInfo.metrics, content, bentoSeed, paletteColors, bentoWcag)),
+    [mode, fontInfo, content, bentoSeed, paletteColors, bentoWcag],
   )
 
   const selected = spec ? spec.frames.find((f) => f.id === selectedId) || null : null
@@ -395,10 +400,13 @@ export default function App() {
         {mode === 'bento' ? <aside className="toolbar bento-controls">
           <div className="tool-group anim-in"><h3>Редактор анимации</h3>
             <label className="field"><span className="field-label">Движение</span><select className="select" value={bentoAnimation} onChange={(e) => setBentoAnimation(e.target.value)}>
-              <option value="mixed">Смешанное</option><option value="float">Всплытие</option><option value="reveal">Проявление</option><option value="drift">Сдвиг</option><option value="pulse">Импульс</option>
+              <option value="mixed">Смешанное</option><option value="float">Всплытие</option><option value="reveal">Проявление</option><option value="drift">Сдвиг</option><option value="pulse">Импульс</option><option value="rotate">Поворот</option><option value="blur">Фокус</option><option value="wave">Волна</option>
             </select></label>
             <label className="field"><span className="field-label">Скорость · {bentoSpeed.toFixed(1)}×</span><input type="range" min="0.5" max="2" step="0.1" value={bentoSpeed} onChange={(e) => setBentoSpeed(+e.target.value)} /></label>
-            <p className="hint-sm">Настройки применяются ко всей мозаике. PNG экспортируется с фирменной подписью.</p>
+            <label className="field"><span className="field-label">Амплитуда · {bentoDistance}px</span><input type="range" min="4" max="48" value={bentoDistance} onChange={(e) => setBentoDistance(+e.target.value)} /></label>
+            <label className="field"><span className="field-label">Задержка · {bentoStagger}мс</span><input type="range" min="0" max="240" step="10" value={bentoStagger} onChange={(e) => setBentoStagger(+e.target.value)} /></label>
+            <label className="field"><span className="field-label">Характер</span><select className="select" value={bentoEasing} onChange={(e) => setBentoEasing(e.target.value)}><option value="smooth">Плавный</option><option value="spring">Пружина</option><option value="linear">Линейный</option></select></label>
+            <label className="bento-check"><input type="checkbox" checked={bentoWcag} onChange={(e) => setBentoWcag(e.target.checked)} /> Подбирать контраст WCAG</label>
           </div>
           <div className="tool-group anim-in"><button className="btn-ghost wide" onClick={() => setBentoSeed((s) => s + 1)}>↻ Новая композиция</button></div>
         </aside> : <Sidebar
@@ -451,6 +459,11 @@ export default function App() {
               onPick={onPickBento}
               animation={bentoAnimation}
               speed={bentoSpeed}
+              distance={bentoDistance}
+              stagger={bentoStagger}
+              easing={bentoEasing}
+              showWcag={bentoWcag}
+              fontCss={fontInfo.fontCss}
             />
           ) : (
             <Preview

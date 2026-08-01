@@ -54,7 +54,6 @@ export default function App() {
   const [navigateOffset, setNavigateOffset] = useState(null);
   const [fontSize, setFontSize] = useState(17);
   const [pageFormat, setPageFormat] = useState('a4');
-  const [guides, setGuides] = useState(true);
   const [contentFont, setContentFont] = useState(null);
 
   const reqId = useRef(0);
@@ -212,7 +211,6 @@ export default function App() {
                 <option value="a4">A4</option><option value="book">Книга 145×215</option>
               </select>
             </label>
-            <label className="control-row check-row"><input type="checkbox" checked={guides} onChange={(e) => setGuides(e.target.checked)} /> Направляющие</label>
             <label className="font-upload">Заменить шрифт<input type="file" accept=".otf,.ttf,.woff,.woff2" onChange={(e) => uploadContentFont(e.target.files[0])} /></label>
             {contentFont && <button className="reset-font" onClick={() => setContentFont(null)}>Сбросить · {contentFont.name}</button>}
           </section>
@@ -223,12 +221,11 @@ export default function App() {
         <main className="spell-main">
           {ltAvailable === false && <div className="banner banner--warn">LanguageTool недоступен. Проверьте интернет.</div>}
           {contentFont && <style>{`@font-face{font-family:'SpellContent';src:url(${contentFont.url});font-display:swap}`}</style>}
-          <div className={`workspace paper-workspace format-${pageFormat}${guides ? ' show-guides' : ''}`}>
+          <div className={`workspace paper-workspace format-${pageFormat}`}>
             <div className="paper-carousel" aria-label={`Страниц: ${pages.length}`}>
               {pages.map((page, index) => {
                 const start = pages.slice(0, index).reduce((sum, item) => sum + item.length, 0)
                 return <div className="paper-page" key={`${index}-${pages.length}`}>
-                  <span className="page-number">{index + 1} / {pages.length}</span>
                   <Editor text={page} matches={matches.filter((m) => m.offset >= start && m.offset < start + page.length).map((m) => ({ ...m, offset: m.offset - start }))}
                     onChange={(next) => setText(text.slice(0, start) + next + text.slice(start + page.length))}
                     navigateOffset={navigateOffset == null ? null : navigateOffset - start}

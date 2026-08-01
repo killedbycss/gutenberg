@@ -306,16 +306,27 @@ body {
 .bento-text { transform-box: fill-box; transform-origin: center; }
 /* Движение занимает начало цикла, затем текст спокойно стоит несколько секунд.
    Так анимации уверенно читаются, но не превращают макет в постоянный шум. */
-@keyframes textFloat { 0%,7% { transform: translateY(10%); opacity:.25 } 16% { transform: translateY(-5%); opacity:1 } 23%,100% { transform:none; opacity:1 } }
-@keyframes textReveal { 0%,6% { opacity:0; transform:translateY(18%) scale(.96) } 17% { opacity:1; transform:translateY(-3%) scale(1.01) } 24%,100% { transform:none; opacity:1 } }
-@keyframes textDrift { 0%,6% { opacity:.3; transform:translateX(-14%) } 18% { opacity:1; transform:translateX(3%) } 25%,100% { transform:none; opacity:1 } }
+@keyframes textFloat { 0%,7% { transform: translateY(var(--bento-distance)); opacity:.25 } 16% { transform: translateY(calc(var(--bento-distance) * -.25)); opacity:1 } 23%,100% { transform:none; opacity:1 } }
+@keyframes textReveal { 0%,6% { opacity:0; transform:translateY(var(--bento-distance)) scale(.96) } 17% { opacity:1; transform:translateY(-3%) scale(1.01) } 24%,100% { transform:none; opacity:1 } }
+@keyframes textDrift { 0%,6% { opacity:.3; transform:translateX(calc(var(--bento-distance) * -1)) } 18% { opacity:1; transform:translateX(calc(var(--bento-distance) * .2)) } 25%,100% { transform:none; opacity:1 } }
 @keyframes textPulse { 0%,8% { opacity:.25; transform:scale(.9) } 17% { opacity:1; transform:scale(1.045) } 25%,100% { transform:none; opacity:1 } }
-.text-float { animation: textFloat calc(9.2s / var(--bento-speed, 1)) cubic-bezier(.2,.75,.2,1) infinite; }
-.text-reveal { animation: textReveal calc(10.6s / var(--bento-speed, 1)) cubic-bezier(.2,.75,.2,1) infinite; }
-.text-drift { animation: textDrift calc(11.8s / var(--bento-speed, 1)) cubic-bezier(.2,.75,.2,1) infinite; }
-.text-pulse { animation: textPulse calc(8.7s / var(--bento-speed, 1)) cubic-bezier(.2,.75,.2,1) infinite; }
+@keyframes textRotate { 0%,7% { opacity:0; transform:translateY(var(--bento-distance)) rotate(-6deg) } 18% { opacity:1; transform:rotate(1deg) } 26%,100% { transform:none; opacity:1 } }
+@keyframes textBlur { 0%,7% { opacity:0; filter:blur(10px); transform:scale(1.08) } 20% { opacity:1; filter:blur(0); transform:none } 100% { opacity:1; filter:none } }
+@keyframes textWave { 0%,7% { opacity:.2; transform:translate(calc(var(--bento-distance) * -.5), var(--bento-distance)) skewX(-8deg) } 18% { opacity:1; transform:translate(calc(var(--bento-distance) * .12), -3px) } 27%,100% { transform:none; opacity:1 } }
+.text-float { animation: textFloat calc(9.2s / var(--bento-speed, 1)) var(--bento-ease, cubic-bezier(.2,.75,.2,1)) infinite; }
+.text-reveal { animation: textReveal calc(10.6s / var(--bento-speed, 1)) var(--bento-ease, cubic-bezier(.2,.75,.2,1)) infinite; }
+.text-drift { animation: textDrift calc(11.8s / var(--bento-speed, 1)) var(--bento-ease, cubic-bezier(.2,.75,.2,1)) infinite; }
+.text-pulse { animation: textPulse calc(8.7s / var(--bento-speed, 1)) var(--bento-ease, cubic-bezier(.2,.75,.2,1)) infinite; }
+.text-rotate { animation: textRotate calc(9.8s / var(--bento-speed, 1)) var(--bento-ease, cubic-bezier(.2,.75,.2,1)) infinite; }
+.text-blur { animation: textBlur calc(10.2s / var(--bento-speed, 1)) var(--bento-ease, cubic-bezier(.2,.75,.2,1)) infinite; }
+.text-wave { animation: textWave calc(9.4s / var(--bento-speed, 1)) var(--bento-ease, cubic-bezier(.2,.75,.2,1)) infinite; }
+.ease-smooth { --bento-ease: cubic-bezier(.2,.75,.2,1); }
+.ease-spring { --bento-ease: cubic-bezier(.16,1.35,.3,1); }
+.ease-linear { --bento-ease: linear; }
 .bento-actions { display: flex; gap: 8px; }
 .bento-controls input[type=range] { width: 100%; accent-color: var(--primary); }
+.bento-check { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text); }
+.bento-check input { accent-color: var(--primary); }
 .bento-tile:hover { filter: brightness(1.06); z-index: 2; }
 .bento-svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
 

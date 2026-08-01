@@ -4,7 +4,7 @@
 #
 # Что делает:
 #   1) создаёт локальное окружение Python (.venv) и ставит зависимости;
-#   2) при отсутствии собранных фронтендов — собирает их (нужен Node/npm);
+#   2) собирает отсутствующие или устаревшие фронтенды (нужен Node/npm);
 #   3) проверяет LanguageTool (для орфографии) и подсказывает, если его нет;
 #   4) запускает единый сервер и открывает браузер.
 #
@@ -49,11 +49,15 @@ python -m pip install --quiet -r backend/requirements.txt
 # --- 2) Фронтенды -----------------------------------------------------------
 need_build=0
 for m in spellcheck typograph converter layouts; do
-  [ -d "build/$m" ] || need_build=1
+  if [ ! -f "build/$m/index.html" ]; then
+    need_build=1
+  elif find "../$m/frontend/src" "../$m/frontend/index.html" -type f -newer "build/$m/index.html" -print -quit 2>/dev/null | grep -q .; then
+    need_build=1
+  fi
 done
 if [ "$need_build" = "1" ]; then
   if command -v npm >/dev/null 2>&1; then
-    echo "→ Собираю фронтенды (первый запуск)…"
+    echo "→ Собираю фронтенды…"
     bash build.sh
   else
     echo "✗ Нет собранных фронтендов и не найден npm (Node.js)."

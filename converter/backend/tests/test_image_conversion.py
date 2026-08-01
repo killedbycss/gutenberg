@@ -32,3 +32,13 @@ def test_convert_to_webp():
     assert result["ok"], result.get("error")
     assert result["data"][:4] == b"RIFF"
     assert result["data"][8:12] == b"WEBP"
+
+
+def test_lossless_targets_preserve_pixels():
+    source = make_png()
+    original = Image.open(io.BytesIO(source)).convert("RGBA")
+    for target in ("png-lossless", "webp-lossless"):
+        result = imagekit.convert_image(source, target)
+        assert result["ok"], result.get("error")
+        converted = Image.open(io.BytesIO(result["data"])).convert("RGBA")
+        assert list(converted.getdata()) == list(original.getdata())

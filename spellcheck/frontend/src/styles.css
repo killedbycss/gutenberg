@@ -150,13 +150,11 @@ body {
 .outline-item.level-3, .outline-item.level-4, .outline-item.level-5, .outline-item.level-6 { padding-left: 24px; color: var(--muted); font-size: 12px; }
 .spell-main { min-width: 0; padding: 26px 4vw 40px; }
 .paper-workspace { max-width: none; margin: 0 auto; overflow: hidden; }
-.paper-carousel { display: flex; gap: 24px; overflow-x: auto; padding: 8px 8px 24px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
-.paper-page { position: relative; flex: 0 0 min(760px, calc(100vw - 390px)); aspect-ratio: 210 / 297; padding: 9% 8%; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 28px rgba(0,0,0,.1); scroll-snap-align: center; }
+.paper-carousel { display: flex; gap: 28px; overflow-x: auto; padding: 10px 10px 26px; scroll-snap-type: x mandatory; scrollbar-width: thin; overscroll-behavior-x: contain; }
+.paper-page { position: relative; flex: 0 0 min(760px, calc(100vw - 390px)); aspect-ratio: 210 / 297; padding: 9% 8%; background: #fff; color: #26231f; border: 0; box-shadow: 0 8px 30px rgba(0,0,0,.12); scroll-snap-align: start; }
 .format-book .paper-page { aspect-ratio: 145 / 215; flex-basis: min(650px, calc(100vw - 390px)); }
-.paper-page .editor { height: 100%; border: 0; box-shadow: none; overflow: visible; }
+.paper-page .editor { height: 100%; border: 0; box-shadow: none; overflow: hidden; }
 .paper-page .editor__backdrop, .paper-page .editor__input { height: 100%; min-height: 0; padding: 0; line-height: 1.55; }
-.page-number { position: absolute; right: 20px; bottom: 14px; color: var(--muted); font: 11px var(--font); }
-.show-guides .paper-page::before { content: ''; position: absolute; inset: 7% 6%; border: 1px dashed color-mix(in srgb, var(--primary) 35%, transparent); pointer-events: none; }
 .text-tools { display: grid; gap: 10px; }
 .control-row { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; }
 .control-row input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--primary); }
@@ -165,8 +163,6 @@ body {
 .font-upload { display: block; padding: 8px; border: 1px dashed var(--border); border-radius: 7px; font-size: 12px; text-align: center; cursor: pointer; }
 .font-upload input { display: none; }
 .reset-font { border: 0; background: none; color: var(--primary); font: 11px var(--font); cursor: pointer; }
-.paper-workspace .editor { border-radius: 2px; border-color: color-mix(in srgb, var(--border) 75%, transparent); box-shadow: 0 2px 16px rgba(0,0,0,.06); }
-.paper-workspace .editor__backdrop, .paper-workspace .editor__input { min-height: calc(100vh - 150px); height: auto; }
 .toolbar__field {
   display: flex;
   align-items: center;

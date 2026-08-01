@@ -4,7 +4,7 @@ import { makeMeasurer } from '../render/textLayout'
 import { RENDER_FONT_FAMILY } from '../layout/schema'
 import { GIFEncoder, quantize, applyPalette } from 'gifenc'
 
-export default function Bento({ items, fontReady, seed, onShuffle, onPick, animation = 'mixed', speed = 1 }) {
+export default function Bento({ items, fontReady, seed, onShuffle, onPick, animation = 'mixed', speed = 1, distance = 18, stagger = 90, easing = 'smooth', showWcag = true, fontCss = '' }) {
   const measurer = useMemo(() => makeMeasurer(RENDER_FONT_FAMILY), [fontReady])
   const gridRef = useRef(null)
   const [exporting, setExporting] = useState(false)
@@ -17,11 +17,15 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
       const ctx = canvas.getContext('2d'); ctx.scale(scale, scale); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, box.width, box.height + 44)
       for (const tile of grid.querySelectorAll('.bento-tile')) {
         const svg = tile.querySelector('svg'); if (!svg) continue
-        const rect = tile.getBoundingClientRect(); const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' }))
+        const rect = tile.getBoundingClientRect(); const copy = svg.cloneNode(true)
+        if (fontCss) { const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs'); const style = document.createElementNS('http://www.w3.org/2000/svg', 'style'); style.textContent = fontCss; defs.appendChild(style); copy.prepend(defs) }
+        const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml' }))
         const image = await new Promise((resolve, reject) => { const value = new Image(); value.onload = () => resolve(value); value.onerror = reject; value.src = url })
         ctx.drawImage(image, rect.left - box.left, rect.top - box.top, rect.width, rect.height); URL.revokeObjectURL(url)
       }
-      ctx.fillStyle = '#111'; ctx.font = "600 14px 'PT Root UI', sans-serif"; ctx.fillText('G  Гутенберг', 14, box.height + 28)
+      const icon = await new Promise((resolve) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => resolve(null); image.src = new URL('../../../assets/studio-icon.png', window.location.href).href })
+      if (icon) ctx.drawImage(icon, 12, box.height + 10, 24, 24)
+      ctx.fillStyle = '#111'; ctx.font = "600 14px 'PT Root UI', sans-serif"; ctx.fillText('Гутенберг', 44, box.height + 27)
       return canvas
   }
 
@@ -68,7 +72,7 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
       </div>
 
       {/* key={seed} перезапускает анимацию «переключения» при каждом перемешивании */}
-      <div className="bento-grid" key={seed} ref={gridRef} style={{ '--bento-speed': speed }}>
+      <div className={`bento-grid ease-${easing}`} key={seed} ref={gridRef} style={{ '--bento-speed': speed, '--bento-distance': `${distance}px` }}>
         {items.map((it, i) => (
           <button
             key={i}
@@ -82,7 +86,7 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
             onClick={() => onPick(it)}
             title="Открыть в редакторе"
           >
-            <span className="contrast-badge">WCAG {it.palette.wcag} · {it.palette.contrast}:1</span>
+            {showWcag && <span className="contrast-badge">WCAG {it.palette.wcag} · {it.palette.contrast}:1</span>}
             <SpecSvg
               spec={it.spec}
               measurer={measurer}
@@ -90,6 +94,7 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
               preserveAspectRatio="xMidYMid meet"
               style={{ width: '100%', height: '100%', aspectRatio: 'auto' }}
               textAnimation={animation === 'mixed' ? it.textAnimation : animation}
+              stagger={stagger}
             />
           </button>
         ))}

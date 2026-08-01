@@ -45,6 +45,9 @@ export default function App() {
       if (reports.some((report) => report.ok && report.kind === 'image')) {
         setSelected((prev) => new Set([...prev, 'ico', 'jpg', 'webp']))
       }
+      if (reports.some((report) => report.ok && report.kind === 'media')) {
+        setSelected((prev) => new Set([...prev, 'mp4', 'webm-video', 'gif-video']))
+      }
       setItems((prev) => {
         const next = [...prev]
         entries.forEach((entry, i) => {
@@ -168,7 +171,7 @@ export default function App() {
           <div className="cards">
             {items.map((it) =>
               it.report ? (
-                <FontCard key={it.id} report={it.report} onRemove={() => removeItem(it.id)} />
+                <FontCard key={it.id} report={it.report} file={it.file} onRemove={() => removeItem(it.id)} />
               ) : (
                 <div className="card font-card loading" key={it.id}>
                   <div className="card-top">
