@@ -87,7 +87,7 @@ export default function Toolbar({
       <div className="sidebar-legend" aria-label="Количество исправлений">
         <h3>Исправления</h3>
         {Object.entries(TYPE_META).map(([id, meta]) => (
-          <span key={id} className="legend-item"><b className={`dot ${meta.cls}`} />{meta.label}<em>{counts[id] || 0}</em></span>
+          <span key={id} className="legend-item"><b className={`legend-mark ${meta.cls}`} />{meta.label}<em>{counts[id] || 0}</em></span>
         ))}
       </div>
     </aside>

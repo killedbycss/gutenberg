@@ -15,15 +15,21 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
       const box = grid.getBoundingClientRect(); const scale = 2
       const canvas = document.createElement('canvas'); canvas.width = Math.round(box.width * scale); canvas.height = Math.round(box.height * scale)
       const ctx = canvas.getContext('2d'); ctx.scale(scale, scale); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, box.width, box.height)
-      for (const tile of grid.querySelectorAll('.bento-tile')) {
+      const tiles = [...grid.querySelectorAll('.bento-tile')]
+      for (let tileIndex = 0; tileIndex < tiles.length; tileIndex += 1) {
+        const tile = tiles[tileIndex]
         const svg = tile.querySelector('svg'); if (!svg) continue
-        const rect = tile.getBoundingClientRect(); const copy = svg.cloneNode(true)
+        const rect = { left: box.left + tile.offsetLeft, top: box.top + tile.offsetTop, width: tile.offsetWidth, height: tile.offsetHeight }; const copy = svg.cloneNode(true)
         copy.setAttribute('width', String(rect.width)); copy.setAttribute('height', String(rect.height)); copy.setAttribute('preserveAspectRatio', 'xMidYMid slice')
-        if (phase != null) copy.querySelectorAll('.bento-text').forEach((text, index) => applyTextFrame(text, (phase + index * Math.max(.025, stagger / 4000)) % 1, animationCss))
+        const introStart = tileIndex * .035
+        const intro = phase == null ? 1 : easeOut(clamp01((phase - introStart) / .24))
+        const textPhase = phase == null ? null : clamp01((phase - introStart - .08) / .72)
+        if (textPhase != null) copy.querySelectorAll('.bento-text').forEach((text, index) => applyTextFrame(text, clamp01(textPhase - index * Math.max(.018, stagger / 6500)), animationCss))
         if (fontCss) { const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs'); const style = document.createElementNS('http://www.w3.org/2000/svg', 'style'); style.textContent = fontCss; defs.appendChild(style); copy.prepend(defs) }
         const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml' }))
         const image = await new Promise((resolve, reject) => { const value = new Image(); value.onload = () => resolve(value); value.onerror = reject; value.src = url })
-        ctx.drawImage(image, rect.left - box.left, rect.top - box.top, rect.width, rect.height); URL.revokeObjectURL(url)
+        const drift = (1 - intro) * (tileIndex % 2 ? 22 : -22)
+        ctx.save(); ctx.globalAlpha = intro; ctx.translate(drift, (1 - intro) * 14); ctx.drawImage(image, rect.left - box.left, rect.top - box.top, rect.width, rect.height); ctx.restore(); URL.revokeObjectURL(url)
       }
       return canvas
   }
@@ -41,15 +47,16 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
     setExporting(true)
     try {
       const first = await renderComposition(0); if (!first) return
-      const width = Math.min(640, first.width); const height = Math.round(first.height * width / first.width)
+      const width = Math.min(960, first.width); const height = Math.round(first.height * width / first.width)
       const frame = document.createElement('canvas'); frame.width = width; frame.height = height
       const ctx = frame.getContext('2d'); const encoder = GIFEncoder()
-      for (let i = 0; i < 16; i += 1) {
-        const source = i === 0 ? first : await renderComposition(i / 16)
+      const frames = 36
+      for (let i = 0; i < frames; i += 1) {
+        const source = i === 0 ? first : await renderComposition(i / (frames - 1))
         ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, width, height)
         ctx.drawImage(source, 0, 0, width, height)
         const rgba = ctx.getImageData(0, 0, width, height); const palette = quantize(rgba.data, 256); const indexed = applyPalette(rgba.data, palette)
-        encoder.writeFrame(indexed, width, height, { palette, delay: 100, repeat: 0 })
+        encoder.writeFrame(indexed, width, height, { palette, delay: 80, repeat: 0 })
       }
       encoder.finish(); const blob = new Blob([encoder.bytes()], { type: 'image/gif' }); const url = URL.createObjectURL(blob)
       const link = document.createElement('a'); link.href = url; link.download = 'gutenberg-bento.gif'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000)
@@ -118,3 +125,6 @@ function applyTextFrame(node, phase, customCss = '') {
   node.style.opacity = kind === 'reveal' ? String(Math.min(1, phase * 3)) : '1'
   node.style.filter = kind === 'blur' ? `blur(${Math.abs(wave) * 3}px)` : 'none'
 }
+
+function clamp01(value) { return Math.max(0, Math.min(1, value)) }
+function easeOut(value) { return 1 - Math.pow(1 - value, 3) }

@@ -88,13 +88,11 @@ export default function Preview({
             />
           ))}
 
-          {selFrame && !selFrame.hidden && (
-            <rect
-              className="frame-sel" pointerEvents="none" fill="none"
-              x={selFrame.box.x * W} y={selFrame.box.y * H}
-              width={selFrame.box.w * W} height={selFrame.box.h * H}
-            />
-          )}
+          {selFrame && !selFrame.hidden && <g pointerEvents="none">
+            <rect className="frame-sel" fill="none" x={selFrame.box.x * W} y={selFrame.box.y * H} width={selFrame.box.w * W} height={selFrame.box.h * H} />
+            <rect className="frame-coord-bg" x={selFrame.box.x * W} y={Math.max(2, selFrame.box.y * H - 27)} width={Math.min(330, selFrame.box.w * W)} height="22" rx="5" />
+            <text className="frame-coord-label" x={selFrame.box.x * W + 8} y={Math.max(17, selFrame.box.y * H - 12)}>{`x ${Math.round(selFrame.box.x * 100)}%  y ${Math.round(selFrame.box.y * 100)}%  ·  ${Math.round(selFrame.box.w * 100)}×${Math.round(selFrame.box.h * 100)}%`}</text>
+          </g>}
         </svg>
       </div>
 
@@ -128,7 +126,7 @@ function renderOp(op, i) {
   }
   if (op.kind === 'text') {
     return (
-      <text key={i} fontFamily={`'${RENDER_FONT_FAMILY}'`} fontSize={op.fontSize}
+      <text key={i} fontFamily={`'${RENDER_FONT_FAMILY}', Arial, sans-serif`} fontSize={op.fontSize}
         fill={op.fill} textAnchor={op.anchor} letterSpacing={op.letterSpacing}
         pointerEvents="none">
         {op.lines.map((l, j) => <tspan key={j} x={l.x} y={l.y}>{l.text}</tspan>)}

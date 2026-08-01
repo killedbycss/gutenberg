@@ -167,7 +167,7 @@ export function FontPanel({ fontInfo, loadingFont, fontError, onUploadFont }) {
       e.target.value = ''
     }} />
     {fontError && <p className="tool-warn">{fontError}</p>}
-    {fontInfo && <div className="metrics">
+    {fontInfo && !fontInfo.isSystem && <div className="metrics">
       <div className="metrics-name">{fontInfo.metrics.family || 'Без имени'}</div>
       <dl className="metrics-grid"><dt>UPM</dt><dd>{fontInfo.metrics.unitsPerEm}</dd><dt>cap-height</dt><dd>{fontInfo.metrics.capHeight}</dd><dt>x-height</dt><dd>{fontInfo.metrics.xHeight}</dd></dl>
       <p className={`metrics-src${fontInfo.metrics.capHeightSource === 'fallback' ? ' warn' : ''}`}>cap-height: {CAP_SOURCE_NOTE[fontInfo.metrics.capHeightSource] || '—'}</p>

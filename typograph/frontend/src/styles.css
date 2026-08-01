@@ -46,9 +46,8 @@
 html[data-theme="light"] { --bg:#fff; --surface:#fff; --surface-2:#f5f5f4; --border:#e9e9e7; --text:#37352f; --muted:#9b9a97; --primary:#2f80ed; --primary-ink:#fff; }
 html[data-theme="dark"] { --bg:#191919; --surface:#1f1f1f; --surface-2:#2a2a2a; --border:#373737; --text:#e6e6e4; --muted:#8f8f8c; --primary:#4a9eea; --primary-ink:#fff; }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
+button, input, select, textarea { font-family: var(--font); }
 
 body {
   margin: 0;
@@ -293,6 +292,11 @@ body {
 .sidebar-legend h3 { margin-bottom: 2px; }
 .sidebar-legend .legend-item { width: 100%; }
 .sidebar-legend .legend-item em { margin-left: auto; min-width: 27px; text-align: center; }
+.legend-item { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; }
+.legend-mark { width: 22px; height: 0; border-bottom: 2px solid; }
+.legend-mark.mk-quotes { border-color: var(--mk-quotes-fg); }
+.legend-mark.mk-dashes { border-color: var(--mk-dashes-fg); }
+.legend-mark.mk-nbsp { border-color: var(--mk-nbsp-fg); }
 
 /* ---------- Panes ---------- */
 .panes {
@@ -501,6 +505,7 @@ button.ghost, .segmented button, .check, .mk { transition: background .12s ease,
 .toolbar, .pane { animation: sectionIn .28s ease-out backwards; }
 .pane:nth-child(2) { animation-delay: .04s; }
 @media (prefers-reduced-motion: reduce) { .toolbar, .pane, .code-mark { animation: none !important; } }
+@media (max-width:900px){.mobile-pane-tabs{left:12px;right:12px;padding:3px;gap:2px;border-color:color-mix(in srgb,var(--border) 72%,transparent);border-radius:10px;background:color-mix(in srgb,var(--surface) 94%,transparent);box-shadow:0 3px 12px rgba(0,0,0,.09)}.mobile-pane-tabs button{min-height:36px;border-radius:7px}.layout.mobile-pane-tools>.toolbar{bottom:52px;max-height:66vh;border-radius:13px 13px 0 0;border-top-color:color-mix(in srgb,var(--border) 75%,transparent);box-shadow:0 -4px 16px rgba(0,0,0,.08)}}
 .mobile-pane-tabs { display: none; }
 @media (max-width: 900px) {
   body { padding-bottom: 58px; }

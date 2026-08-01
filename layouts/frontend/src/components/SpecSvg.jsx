@@ -81,7 +81,7 @@ function renderOp(op, i, textAnimation, stagger, animationCss) {
   if (op.kind === 'text') {
     return (
       <text key={i} className={textAnimation ? `bento-text text-${textAnimation}` : undefined}
-        style={animationCss ? { animation: animationCss, animationDelay: `${i * stagger}ms` } : { animationDelay: `${i * stagger}ms` }} fontFamily={`'${RENDER_FONT_FAMILY}'`} fontSize={op.fontSize}
+        style={animationCss ? { animation: animationCss, animationDelay: `${i * stagger}ms` } : { animationDelay: `${i * stagger}ms` }} fontFamily={`'${RENDER_FONT_FAMILY}', Arial, sans-serif`} fontSize={op.fontSize}
         fill={op.fill} textAnchor={op.anchor} letterSpacing={op.letterSpacing}>
         {op.lines.map((l, j) => <tspan key={j} x={l.x} y={l.y}>{l.text}</tspan>)}
       </text>

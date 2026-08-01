@@ -6,8 +6,9 @@
 // document.fonts). Возвращает (text, fontSizePx, letterSpacingPx) → ширина, px.
 export function makeMeasurer(family) {
   const ctx = document.createElement('canvas').getContext('2d')
+  const stack = family.includes(',') ? family : `"${family}", Arial, sans-serif`
   return (text, fontSizePx, letterSpacingPx = 0) => {
-    ctx.font = `${fontSizePx}px "${family}"`
+    ctx.font = `${fontSizePx}px ${stack}`
     // letterSpacing поддерживается в Chromium/Safari; где нет — просто игнор.
     if ('letterSpacing' in ctx) ctx.letterSpacing = `${letterSpacingPx}px`
     return ctx.measureText(text).width

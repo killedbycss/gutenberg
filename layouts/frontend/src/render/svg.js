@@ -113,7 +113,7 @@ export function buildSvgString(spec, measurer, { fontCss = '' } = {}) {
         .map((l) => `<tspan x="${round(l.x)}" y="${round(l.y)}">${escapeXml(l.text)}</tspan>`)
         .join('')
       parts.push(
-        `<text font-family="'${RENDER_FONT_FAMILY}'" font-size="${op.fontSize}" fill="${op.fill}" text-anchor="${op.anchor}" letter-spacing="${round(op.letterSpacing)}">${tspans}</text>`,
+        `<text font-family="'${RENDER_FONT_FAMILY}', Arial, sans-serif" font-size="${op.fontSize}" fill="${op.fill}" text-anchor="${op.anchor}" letter-spacing="${round(op.letterSpacing)}">${tspans}</text>`,
       )
     }
   }

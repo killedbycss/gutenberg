@@ -26,6 +26,11 @@ const DEFAULT_CONTENT_EN = {
   caption: 'studio · 2026',
   images: [],
 }
+const SYSTEM_FONT_INFO = {
+  isSystem: true,
+  fileName: 'Системный шрифт', fontCss: '',
+  metrics: { family: 'System UI', unitsPerEm: 1000, ascent: 800, descent: -200, lineGap: 0, capHeight: 700, xHeight: 520, capHeightSource: 'fallback', hasCyrillic: true },
+}
 
 let _uidN = 0
 const uid = () => `${Date.now().toString(36)}${(_uidN++).toString(36)}`
@@ -196,7 +201,7 @@ function applyOverrides(spec, overrides, bgColor) {
 
 export default function App() {
   const [health, setHealth] = useState(true)
-  const [fontInfo, setFontInfo] = useState(null)
+  const [fontInfo, setFontInfo] = useState(SYSTEM_FONT_INFO)
   const [loadingFont, setLoadingFont] = useState(false)
   const [fontError, setFontError] = useState(null)
 

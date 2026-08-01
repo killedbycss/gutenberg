@@ -38,6 +38,7 @@
     html[data-theme="dark"] { --bg:#191919; --surface:#1f1f1f; --surface-2:#2a2a2a; --border:#373737; --text:#e6e6e4; --muted:#8f8f8c; --primary:#4a9eea; }
 
     * { box-sizing: border-box; }
+    button, input, select, textarea { font-family: var(--font); }
     html, body { height: 100%; }
     body {
       margin: 0;
@@ -106,6 +107,8 @@
     .support-pop[hidden] { display: none; }
     .support-pop strong { display: block; margin-bottom: 5px; }
     .support-pop p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .support-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 12px; }
+    .support-actions button, .support-actions a { min-height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); color: var(--text); text-decoration: none; font: 600 12px var(--font); cursor: pointer; }
     @keyframes pop-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
 
     /* ---------- Сцена с iframe ---------- */
@@ -181,7 +184,7 @@
       </button>
     </div>
   </header>
-  <div class="support-pop" id="support-pop" role="status" hidden><strong>Спасибо!</strong><p>4 пакетика кофе стоят 100 рублей. Номер +79009498387 скопирован — по нему можно перевести.</p></div>
+  <div class="support-pop" id="support-pop" role="status" hidden><strong>Спасибо!</strong><p>4 пакетика кофе стоят 100 рублей. По номеру можно перевести.</p><div class="support-actions"><button id="copy-support-number">Копировать номер</button><a href="https://killedbycss.github.io/portfolio" target="_blank" rel="noopener">Портфолио ↗</a></div></div>
 
   <main class="stage" id="stage">
     <div class="loader" id="loader">
@@ -352,12 +355,13 @@
         if (event.data && event.data.type === 'studio-activate' && MODULES.indexOf(event.data.mod) !== -1) activate(event.data.mod);
       });
       document.getElementById('support-button').addEventListener('click', async function () {
-        var number = '+79009498387';
-        try { await navigator.clipboard.writeText(number); } catch (e) {
-          var area = document.createElement('textarea'); area.value = number; document.body.appendChild(area); area.select(); document.execCommand('copy'); area.remove();
-        }
         var pop = document.getElementById('support-pop'); pop.hidden = false;
         clearTimeout(window.__supportTimer); window.__supportTimer = setTimeout(function () { pop.hidden = true; }, 5500);
+      });
+      document.getElementById('copy-support-number').addEventListener('click', async function () {
+        var number = '+79009498387';
+        try { await navigator.clipboard.writeText(number); } catch (e) { var area = document.createElement('textarea'); area.value = number; document.body.appendChild(area); area.select(); document.execCommand('copy'); area.remove(); }
+        this.textContent = 'Номер скопирован ✓';
       });
       document.getElementById('theme-toggle').addEventListener('click', function () {
         applyTheme(theme === 'dark' ? 'light' : 'dark');
