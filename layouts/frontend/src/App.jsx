@@ -147,24 +147,29 @@ function buildBento(metrics, content, seed, paletteColors, enforceContrast) {
   const measurer = makeMeasurer(RENDER_FONT_FAMILY)
   const r = mulberry32(seed * 7 + 3)
   const slots = BENTO_GRIDS[Math.floor(r() * BENTO_GRIDS.length)]
-  const purpose = purposeById('desktop-hd')
   const count = paletteColors.length
-  const paletteIndexes = [0, Math.min(1, count - 1), Math.min(2, count - 1)]
-  const palette = semanticPalette(paletteColors, paletteIndexes, enforceContrast)
-  const variant = VARIANT_OPTIONS[Math.floor(r() * VARIANT_OPTIONS.length)].id
   const copy = metrics.hasCyrillic === false ? BENTO_COPY_EN : BENTO_COPY
-  const sample = copy[Math.floor(r() * copy.length)]
-  const itemContent = { ...content, ...sample, images: content.images || [] }
-  const spec = generateLayout({ purpose, metrics, content: itemContent, variant, palette, measurer })
-  const cellW = spec.canvas.width / 4
-  const cellH = spec.canvas.height / 3
-  return slots.map((slot) => ({
-    col: slot.col, row: slot.row, cols: slot.cols, rows: slot.rows,
-    purposeId: purpose.id, purposeLabel: purpose.label, palette, paletteIndexes, variant, content: itemContent,
-    textAnimation: ['float', 'reveal', 'drift', 'pulse', 'rotate', 'blur', 'wave'][Math.floor(r() * 7)],
-    spec,
-    viewBox: { x: (slot.col - 1) * cellW, y: (slot.row - 1) * cellH, w: slot.cols * cellW, h: slot.rows * cellH },
-  }))
+  return slots.map((slot, index) => {
+    const paletteIndexes = [index % count, (index + 1) % count, (index + 2) % count]
+    const palette = semanticPalette(paletteColors, paletteIndexes, enforceContrast)
+    const variant = VARIANT_OPTIONS[index % VARIANT_OPTIONS.length].id
+    const sample = copy[(Math.floor(r() * copy.length) + index) % copy.length]
+    const itemContent = { ...content, ...sample, images: content.images || [] }
+    const purpose = {
+      ...purposeById('desktop-hd'),
+      id: 'desktop-hd', label: 'Бенто-модуль', group: 'Бенто',
+      width: slot.cols * 480, height: slot.rows * 360,
+      safe: { x: .04, y: .04, w: .92, h: .92 },
+      scale: { headlineCap: .13, ratio: 1.48, marginX: .07, marginY: .08, minBody: .025 },
+    }
+    return {
+      col: slot.col, row: slot.row, cols: slot.cols, rows: slot.rows,
+      purposeId: 'desktop-hd', purposeLabel: purpose.label, palette, paletteIndexes, variant, content: itemContent,
+      textAnimation: ['float', 'reveal', 'drift', 'pulse', 'rotate', 'blur', 'wave'][Math.floor(r() * 7)],
+      spec: generateLayout({ purpose, metrics, content: itemContent, variant, palette, measurer }),
+      viewBox: null,
+    }
+  })
 }
 
 // Наложить ручные правки (overrides) поверх сгенерированного макета.
