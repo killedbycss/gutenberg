@@ -99,7 +99,7 @@ def _conversion_options(req) -> dict:
         except ValueError:
             return None
     return {"quality": number("quality", 1, 100) or 90,
-            "width": number("width", 1, 8192), "height": number("height", 1, 8192)}
+            "compression": number("compression", 1, 8) or 1}
 
 
 # --- Эндпоинты -------------------------------------------------------------

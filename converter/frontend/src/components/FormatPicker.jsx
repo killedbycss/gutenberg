@@ -13,6 +13,8 @@ export default function FormatPicker({
   fileCount,
   converting,
   onConvert,
+  compression,
+  onCompression,
 }) {
   const groups = [
     ['font', 'Шрифты'],
@@ -48,6 +50,16 @@ export default function FormatPicker({
             )
           })}</div>)}
         </div>
+      </div>
+
+      <div className="tool-group compression-group">
+        <h3>Сжатие</h3>
+        <div className="compression-levels">
+          {[1, 2, 3, 4].map((level) => <button key={level} className={compression === level ? 'on' : ''} onClick={() => onCompression(level)}>
+            {level === 1 ? 'Без' : `${level}×`}
+          </button>)}
+        </div>
+        <p className="tool-desc">Уменьшает разрешение пропорционально. Например, 2× — вдвое по каждой стороне.</p>
       </div>
 
       {hasFonts && <div className="tool-group">

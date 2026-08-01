@@ -15,7 +15,7 @@ export default function App() {
   const [converting, setConverting] = useState(false)
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
-  const [conversionOptions, setConversionOptions] = useState({ quality: 90, width: '', height: '' })
+  const [conversionOptions, setConversionOptions] = useState({ quality: 90, compression: 1 })
   const idRef = useRef(0)
 
   // Загрузка метаданных форматов + разумные форматы по умолчанию.
@@ -147,6 +147,8 @@ export default function App() {
             fileCount={files.length}
             converting={converting}
             onConvert={onConvert}
+            compression={conversionOptions.compression}
+            onCompression={(compression) => { setConversionOptions((value) => ({ ...value, compression })); setResult(null) }}
           />
         ) : (
           <aside className="toolbar"><div className="skeleton-line" /></aside>
@@ -155,8 +157,7 @@ export default function App() {
         <main className="main">
           <Dropzone onFiles={addFiles} disabled={busy || converting} />
 
-          <CompressionPanel items={items} options={conversionOptions}
-            onChange={(patch) => { setConversionOptions((value) => ({ ...value, ...patch })); setResult(null) }} result={result} />
+          <CompressionPanel items={items} options={conversionOptions} result={result} />
 
           {result && (
             <ResultBanner

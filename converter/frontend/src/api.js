@@ -93,7 +93,8 @@ const canvasBlob = (canvas, type, quality) => new Promise((resolve, reject) => c
 async function convertImage(file, target, options = {}) {
   const bitmap = await createImageBitmap(file)
   const limit = target === 'ico' ? 256 : Infinity
-  const ratio = Math.min((+options.width || bitmap.width) / bitmap.width, (+options.height || bitmap.height) / bitmap.height, limit / bitmap.width, limit / bitmap.height)
+  const compression = Math.max(1, +options.compression || 1)
+  const ratio = Math.min(1 / compression, limit / bitmap.width, limit / bitmap.height)
   const canvas = document.createElement('canvas'); canvas.width = Math.max(1, Math.round(bitmap.width * ratio)); canvas.height = Math.max(1, Math.round(bitmap.height * ratio))
   const ctx = canvas.getContext('2d'); if (target === 'jpg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height) }
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close()

@@ -46,10 +46,9 @@ def _open_rgba(data: bytes, options: dict | None = None) -> Image.Image:
     image.load()
     image = image.convert("RGBA")
     options = options or {}
-    width, height = options.get("width"), options.get("height")
-    if width or height:
-        ratio = min((width or image.width) / image.width, (height or image.height) / image.height)
-        image = image.resize((max(1, round(image.width * ratio)), max(1, round(image.height * ratio))), Image.Resampling.LANCZOS)
+    compression = max(1, int(options.get("compression", 1)))
+    if compression > 1:
+        image = image.resize((max(1, round(image.width / compression)), max(1, round(image.height / compression))), Image.Resampling.LANCZOS)
     return image
 
 
