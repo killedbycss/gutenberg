@@ -1,6 +1,9 @@
 import React, { useMemo } from 'react'
 import { specToDrawOps } from '../render/svg'
 import { RENDER_FONT_FAMILY } from '../layout/schema'
+import iphoneStatusBar from '../assets/iphone-status-bar.svg?raw'
+
+const IPHONE_STATUS_BAR_URI = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(iphoneStatusBar)}`
 
 // Статический (не интерактивный) рендер LayoutSpec в SVG. Тот же расчёт, что и
 // в превью/экспорте (specToDrawOps). Используется в плитках бенто.
@@ -30,19 +33,7 @@ export function DeviceChrome({ purpose, width, height, background }) {
   const ink = isDark(background) ? '#fff' : '#111'
   const faint = isDark(background) ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.15)'
   if (purpose === 'mobile-portrait') return <g aria-label="Интерфейс смартфона">
-    <text x={width * .075} y={height * .032} fill={ink} fontFamily="-apple-system, BlinkMacSystemFont, sans-serif" fontSize={height * .012} fontWeight="600">9:41</text>
-    <rect x={width * .365} y={height * .011} width={width * .27} height={height * .035} rx={height * .0175} fill="#050505" />
-    <circle cx={width * .59} cy={height * .0285} r={height * .0048} fill="#151a21" stroke="#343b45" strokeWidth={height * .001} />
-    <g fill={ink} opacity=".88">
-      <rect x={width * .747} y={height * .025} width={width * .008} height={height * .007} rx={height * .001} />
-      <rect x={width * .759} y={height * .022} width={width * .008} height={height * .010} rx={height * .001} />
-      <rect x={width * .771} y={height * .019} width={width * .008} height={height * .013} rx={height * .001} />
-      <path d={`M ${width * .792} ${height * .027} Q ${width * .81} ${height * .014} ${width * .828} ${height * .027} Q ${width * .81} ${height * .021} ${width * .792} ${height * .027}`} />
-      <circle cx={width * .81} cy={height * .0295} r={height * .0022} />
-    </g>
-    <rect x={width * .845} y={height * .0205} width={width * .079} height={height * .015} rx={height * .004} fill="none" stroke={ink} strokeWidth={height * .0014} opacity=".9" />
-    <rect x={width * .925} y={height * .025} width={width * .004} height={height * .006} rx={height * .002} fill={ink} opacity=".55" />
-    <rect x={width * .849} y={height * .024} width={width * .061} height={height * .008} rx={height * .0025} fill={ink} opacity=".9" />
+    <image href={IPHONE_STATUS_BAR_URI} x="0" y="0" width={width} height={width * 62 / 402} style={isDark(background) ? { filter: 'invert(1)' } : undefined} />
     <rect x={width * .36} y={height * .976} width={width * .28} height={height * .004} rx={height * .002} fill={ink} opacity=".8" />
   </g>
   if (purpose === 'tablet-portrait') return <g aria-label="Интерфейс планшета">
@@ -89,7 +80,7 @@ function renderOp(op, i, textAnimation, stagger, animationCss) {
   if (op.kind === 'text') {
     return (
       <text key={i} className={textAnimation ? `bento-text text-${textAnimation}` : undefined}
-        style={animationCss ? { animation: animationCss, animationDelay: `${i * stagger}ms` } : { animationDelay: `${i * stagger}ms` }} fontFamily={`'${RENDER_FONT_FAMILY}', Arial, sans-serif`} fontSize={op.fontSize}
+        style={animationCss ? { animation: animationCss, animationDelay: `${i * stagger}ms` } : { animationDelay: `${i * stagger}ms` }} fontFamily={`'${op.fontFamily || RENDER_FONT_FAMILY}', Arial, sans-serif`} fontSize={op.fontSize}
         fill={op.fill} textAnchor={op.anchor} letterSpacing={op.letterSpacing}>
         {op.lines.map((l, j) => <tspan key={j} x={l.x} y={l.y}>{l.text}</tspan>)}
       </text>

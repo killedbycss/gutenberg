@@ -130,10 +130,33 @@ export async function convertFonts(files, selectedTargets, preset = 'basic', opt
     outputs.push({ blob, filename: `${stem(file.name)}.${suffix}` })
   }
   if (!outputs.length) throw new Error('Нет совместимых сочетаний файлов и форматов')
-  // GitHub Pages не может сформировать серверный ZIP: браузер скачивает готовые файлы по очереди.
-  outputs.slice(1).forEach(({ blob, filename }, index) => setTimeout(() => downloadBlob(blob, filename), 250 * (index + 1)))
-  return { blob: outputs[0].blob, filename: outputs[0].filename, summary: { files: files.length, targets: selectedTargets, outputsOk: outputs.length, outputsFailed: 0, inputBytes: files.reduce((sum, file) => sum + file.size, 0), outputBytes: outputs.reduce((sum, output) => sum + output.blob.size, 0), warnings: [], errors: [] } }
+  const packaged = outputs.length > 1 ? await createZip(outputs) : outputs[0]
+  return { blob: packaged.blob, filename: packaged.filename, summary: { files: files.length, targets: selectedTargets, outputsOk: outputs.length, outputsFailed: 0, inputBytes: files.reduce((sum, file) => sum + file.size, 0), outputBytes: outputs.reduce((sum, output) => sum + output.blob.size, 0), warnings: [], errors: [] } }
 }
+
+async function createZip(outputs) {
+  const encoder = new TextEncoder(); const local = []; const central = []; let offset = 0
+  for (const output of outputs) {
+    const name = encoder.encode(output.filename); const data = new Uint8Array(await output.blob.arrayBuffer()); const crc = crc32(data)
+    const localHeader = new Uint8Array(30 + name.length); const lv = new DataView(localHeader.buffer)
+    lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true); lv.setUint16(6, 0x0800, true); lv.setUint16(8, 0, true)
+    lv.setUint32(14, crc, true); lv.setUint32(18, data.length, true); lv.setUint32(22, data.length, true); lv.setUint16(26, name.length, true); localHeader.set(name, 30)
+    const centralHeader = new Uint8Array(46 + name.length); const cv = new DataView(centralHeader.buffer)
+    cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true); cv.setUint16(8, 0x0800, true); cv.setUint16(10, 0, true)
+    cv.setUint32(16, crc, true); cv.setUint32(20, data.length, true); cv.setUint32(24, data.length, true); cv.setUint16(28, name.length, true); cv.setUint32(42, offset, true); centralHeader.set(name, 46)
+    local.push(localHeader, data); central.push(centralHeader); offset += localHeader.length + data.length
+  }
+  const centralSize = central.reduce((sum, value) => sum + value.length, 0); const end = new Uint8Array(22); const view = new DataView(end.buffer)
+  view.setUint32(0, 0x06054b50, true); view.setUint16(8, outputs.length, true); view.setUint16(10, outputs.length, true); view.setUint32(12, centralSize, true); view.setUint32(16, offset, true)
+  return { blob: new Blob([...local, ...central, end], { type: 'application/zip' }), filename: 'converted-files.zip' }
+}
+
+const CRC_TABLE = Array.from({ length: 256 }, (_, index) => {
+  let value = index
+  for (let bit = 0; bit < 8; bit += 1) value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1
+  return value >>> 0
+})
+function crc32(bytes) { let value = 0xffffffff; for (const byte of bytes) value = CRC_TABLE[(value ^ byte) & 0xff] ^ (value >>> 8); return (value ^ 0xffffffff) >>> 0 }
 
 function decodeSummary(value) { try { return value ? JSON.parse(decodeURIComponent(escape(atob(value)))) : null } catch { return null } }
 function filenameFromDisposition(value) { const match = value && /filename="?([^";]+)"?/.exec(value); return match ? match[1] : null }

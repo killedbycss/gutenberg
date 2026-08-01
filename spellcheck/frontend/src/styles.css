@@ -1,6 +1,7 @@
 @font-face { font-family: 'PT Root UI'; src: url('/assets/pt-root-ui_regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'PT Root UI'; src: url('/assets/pt-root-ui_medium.woff2') format('woff2'); font-weight: 500 600; font-display: swap; }
 @font-face { font-family: 'PT Root UI'; src: url('/assets/pt-root-ui_bold.woff2') format('woff2'); font-weight: 700 900; font-display: swap; }
+@font-face { font-family: 'PT Astra Serif'; src: url('/assets/pt-astra-serif_regular.woff') format('woff'); font-weight: 400; font-style: normal; font-display: swap; }
 :root {
   /* Общие с остальными инструментами Студии токены */
   --bg: #ffffff;
@@ -169,6 +170,7 @@ body {
 .font-upload { display: block; padding: 8px; border: 1px dashed var(--border); border-radius: 7px; font-size: 12px; text-align: center; cursor: pointer; }
 .font-upload input { display: none; }
 .reset-font { border: 0; background: none; color: var(--primary); font: 11px var(--font); cursor: pointer; }
+.fish-generate { width: 100%; min-height: 34px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); cursor: pointer; font-size: 12px; font-weight: 600; }
 .toolbar__field {
   display: flex;
   align-items: center;

@@ -25,6 +25,7 @@ export const SCHEMA_VERSION = '1.0'
 // регистрируется в браузере и встраивается в экспортируемый SVG.
 export const FONT_KEY = 'primary'
 export const RENDER_FONT_FAMILY = 'LayoutUserFont'
+export const BOOK_DEFAULT_FONT_FAMILY = 'LayoutBookDefault'
 
 export const ROLES = ['headline', 'subhead', 'body', 'caption']
 export const ROLE_LABEL = {

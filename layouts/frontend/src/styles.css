@@ -1,6 +1,7 @@
 @font-face { font-family: 'PT Root UI'; src: url('/assets/pt-root-ui_regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'PT Root UI'; src: url('/assets/pt-root-ui_medium.woff2') format('woff2'); font-weight: 500 600; font-display: swap; }
 @font-face { font-family: 'PT Root UI'; src: url('/assets/pt-root-ui_bold.woff2') format('woff2'); font-weight: 700 900; font-display: swap; }
+@font-face { font-family: 'LayoutBookDefault'; src: url('./assets/pt-astra-serif_regular.woff') format('woff'); font-weight: 400; font-style: normal; font-display: swap; }
 :root {
   --bg: #ffffff;
   --surface: #ffffff;
@@ -184,7 +185,9 @@ body {
 
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
 .field:last-child { margin-bottom: 0; }
-.fish-layout { margin-bottom: 12px; }
+.fish-layout { display: grid; gap: 8px; margin-bottom: 12px; }
+.range-field { display: grid; grid-template-columns: 1fr auto; gap: 5px 8px; align-items: center; color: var(--muted); font-size: 11.5px; }
+.range-field input { grid-column: 1 / -1; width: 100%; accent-color: var(--primary); }
 .field-label { font-size: 12px; color: var(--muted); }
 .field textarea {
   width: 100%; resize: vertical; border: 1px solid var(--border); border-radius: 8px;
@@ -253,7 +256,7 @@ body {
 /* Оверлеи в системе координат холста — обводки постоянной толщины. */
 .frame-sel { stroke: var(--primary); stroke-width: 2; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; }
 .frame-coord-bg { fill: color-mix(in srgb, var(--surface) 94%, transparent); stroke: var(--border); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.frame-coord-label { fill: var(--text); font: 500 15px var(--font); letter-spacing: .01em; }
+.frame-coord-label { fill: var(--text); font: 600 17px var(--font); letter-spacing: .01em; }
 .frame-ph {
   fill: color-mix(in srgb, var(--primary) 7%, transparent);
   stroke: color-mix(in srgb, var(--primary) 45%, transparent);

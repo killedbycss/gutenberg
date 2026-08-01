@@ -21,6 +21,7 @@ export default function Sidebar({
   paletteColors, paletteLocked, paletteSelected, onPaletteColor,
   onTogglePaletteLock, onTogglePaletteColor, onRandomPalette,
   content, onContentField, onAddImage, onRemoveImage,
+  fishAmount, onFishAmount,
   spec, selected, selectedId, onSelect, onFrameChange, onToggleHidden,
   bgColor, onBgColor, onResetEdits, hasEdits,
 }) {
@@ -66,12 +67,16 @@ export default function Sidebar({
       <div className="tool-group anim-in">
         <h3>Контент</h3>
         {(activePurpose?.group === 'Книги' || activePurpose?.group === 'Цифровые устройства') && (
-          <button className="btn-ghost wide fish-layout" onClick={() => {
-            onContentField('headline', 'Шрифт во всей красе')
-            onContentField('subhead', 'Образец для цифрового носителя')
-            onContentField('body', 'Типографика помогает выстроить ясную и выразительную систему. Ритм строки, поля и интервалы создают спокойное пространство для чтения. Форма каждой буквы раскрывается в разных кеглях и сценариях использования.')
-            onContentField('caption', 'Гутенберг · образец набора')
-          }}>Сгенерировать рыба-текст</button>
+          <div className="fish-layout">
+            <label className="range-field"><span>Объём рыба-текста</span><output>{fishAmount}</output><input type="range" min="1" max="12" value={fishAmount} onChange={(event) => onFishAmount(+event.target.value)} /></label>
+            <button className="btn-ghost wide" onClick={() => {
+              const sentences = ['Типографика помогает выстроить ясную и выразительную систему.', 'Ритм строки, поля и интервалы создают спокойное пространство для чтения.', 'Форма каждой буквы раскрывается в разных кеглях и сценариях использования.']
+              onContentField('headline', 'Шрифт во всей красе')
+              onContentField('subhead', activePurpose?.group === 'Книги' ? 'Образец книжного набора' : 'Образец для цифрового носителя')
+              onContentField('body', Array.from({ length: fishAmount }, (_, index) => sentences[index % sentences.length]).join(' '))
+              onContentField('caption', 'Гутенберг · образец набора')
+            }}>Сгенерировать рыба-текст</button>
+          </div>
         )}
         {ROLES.map((role) => (
           <label key={role} className="field">

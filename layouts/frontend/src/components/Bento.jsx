@@ -26,7 +26,12 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
           const liveText = [...svg.querySelectorAll('.bento-text')]
           copy.querySelectorAll('.bento-text').forEach((text, index) => {
             const computed = getComputedStyle(liveText[index])
-            text.style.animation = 'none'; text.style.transform = computed.transform; text.style.transformOrigin = computed.transformOrigin
+            const matrix = computed.transform && computed.transform !== 'none' ? new DOMMatrix(computed.transform) : null
+            const viewBox = svg.viewBox.baseVal
+            const scaleX = viewBox.width / rect.width; const scaleY = viewBox.height / rect.height
+            text.style.animation = 'none'
+            text.style.transform = matrix ? `matrix(${matrix.a} ${matrix.b} ${matrix.c} ${matrix.d} ${matrix.e * scaleX} ${matrix.f * scaleY})` : 'none'
+            text.style.transformBox = 'fill-box'; text.style.transformOrigin = 'center'
             text.style.opacity = computed.opacity; text.style.filter = computed.filter
           })
         }

@@ -56,6 +56,7 @@ export default function App() {
   const [fontSize, setFontSize] = useState(17);
   const [pageFormat, setPageFormat] = useState('a4');
   const [contentFont, setContentFont] = useState(null);
+  const [fishParagraphs, setFishParagraphs] = useState(6);
 
   const reqId = useRef(0);
   const abortRef = useRef(null);
@@ -201,10 +202,10 @@ export default function App() {
           </section>
           <section className="document-outline text-tools">
             <h3>Образец текста</h3>
-            <div className="outline-actions">
-              <button onClick={() => setText(makeFish(language, 4))}>Рыба ×4</button>
-              <button onClick={() => setText(makeFish(language, 10))}>Рыба ×10</button>
-            </div>
+            <label className="control-row">Абзацы <output>{fishParagraphs}</output>
+              <input type="range" min="1" max="20" value={fishParagraphs} onChange={(e) => setFishParagraphs(+e.target.value)} />
+            </label>
+            <button className="fish-generate" onClick={() => setText(makeFish(language, fishParagraphs))}>Сгенерировать рыба-текст</button>
             <label className="control-row">Кегль <output>{fontSize}px</output>
               <input type="range" min="8" max="96" value={fontSize} onChange={(e) => setFontSize(+e.target.value)} />
             </label>
@@ -233,7 +234,7 @@ export default function App() {
                     navigateOffset={navigateOffset == null ? null : navigateOffset - start}
                     onApply={(m, rep) => applyReplacement({ ...m, offset: m.offset + start }, rep)} onIgnore={(m) => ignoreMatch({ ...m, offset: m.offset + start })}
                     onAddToDictionary={(m) => addToDictionary({ ...m, offset: m.offset + start })}
-                    contentStyle={{ fontSize, fontFamily: contentFont ? "'SpellContent', var(--font)" : 'var(--font)' }} />
+                    contentStyle={{ fontSize, fontFamily: contentFont ? "'SpellContent', var(--font)" : "'PT Astra Serif', Georgia, serif" }} />
                 </div>
               })}
             </div>

@@ -13,7 +13,8 @@ export default function Preview({
   const svgRef = useRef(null)
   const drag = useRef(null)
 
-  const measurer = useMemo(() => makeMeasurer(RENDER_FONT_FAMILY), [fontReady])
+  const renderFamily = spec?.meta?.renderFontFamily || RENDER_FONT_FAMILY
+  const measurer = useMemo(() => makeMeasurer(renderFamily), [fontReady, renderFamily])
   const draw = useMemo(
     () => (spec ? specToDrawOps(spec, measurer, { placeholders: true }) : null),
     [spec, measurer],
@@ -90,8 +91,8 @@ export default function Preview({
 
           {selFrame && !selFrame.hidden && <g pointerEvents="none">
             <rect className="frame-sel" fill="none" x={selFrame.box.x * W} y={selFrame.box.y * H} width={selFrame.box.w * W} height={selFrame.box.h * H} />
-            <rect className="frame-coord-bg" x={selFrame.box.x * W} y={Math.max(2, selFrame.box.y * H - 35)} width={Math.min(430, Math.max(300, selFrame.box.w * W))} height="29" rx="6" />
-            <text className="frame-coord-label" x={selFrame.box.x * W + 10} y={Math.max(22, selFrame.box.y * H - 15)}>{`x ${Math.round(selFrame.box.x * 100)}%  y ${Math.round(selFrame.box.y * 100)}%  ·  ${Math.round(selFrame.box.w * 100)}×${Math.round(selFrame.box.h * 100)}%`}</text>
+            <rect className="frame-coord-bg" x={selFrame.box.x * W} y={Math.max(2, selFrame.box.y * H - 40)} width={Math.min(470, Math.max(330, selFrame.box.w * W))} height="34" rx="7" />
+            <text className="frame-coord-label" x={selFrame.box.x * W + 12} y={Math.max(25, selFrame.box.y * H - 17)}>{`x ${Math.round(selFrame.box.x * 100)}%  y ${Math.round(selFrame.box.y * 100)}%  ·  ${Math.round(selFrame.box.w * 100)}×${Math.round(selFrame.box.h * 100)}%`}</text>
           </g>}
         </svg>
       </div>
@@ -126,7 +127,7 @@ function renderOp(op, i) {
   }
   if (op.kind === 'text') {
     return (
-      <text key={i} fontFamily={`'${RENDER_FONT_FAMILY}', Arial, sans-serif`} fontSize={op.fontSize}
+      <text key={i} fontFamily={`'${op.fontFamily || RENDER_FONT_FAMILY}', Arial, sans-serif`} fontSize={op.fontSize}
         fill={op.fill} textAnchor={op.anchor} letterSpacing={op.letterSpacing}
         pointerEvents="none">
         {op.lines.map((l, j) => <tspan key={j} x={l.x} y={l.y}>{l.text}</tspan>)}

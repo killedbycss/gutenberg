@@ -10,7 +10,8 @@ import { generateLayout } from './layout/engine'
 import { purposeById, PURPOSES, VARIANT_OPTIONS } from './layout/purposes'
 import { makeMeasurer } from './render/textLayout'
 import { exportPng, exportSvg } from './render/exportImage'
-import { cloneSpec, RENDER_FONT_FAMILY } from './layout/schema'
+import { cloneSpec, RENDER_FONT_FAMILY, BOOK_DEFAULT_FONT_FAMILY } from './layout/schema'
+import astraFontUrl from './assets/pt-astra-serif_regular.woff?inline'
 
 const DEFAULT_CONTENT = {
   headline: 'Заголовок\nмакета',
@@ -31,6 +32,7 @@ const SYSTEM_FONT_INFO = {
   fileName: 'Системный шрифт', fontCss: '',
   metrics: { family: 'System UI', unitsPerEm: 1000, ascent: 800, descent: -200, lineGap: 0, capHeight: 700, xHeight: 520, capHeightSource: 'fallback', hasCyrillic: true },
 }
+const ASTRA_FONT_CSS = `@font-face{font-family:'${BOOK_DEFAULT_FONT_FAMILY}';src:url('${astraFontUrl}') format('woff');font-weight:400;font-style:normal}`
 
 let _uidN = 0
 const uid = () => `${Date.now().toString(36)}${(_uidN++).toString(36)}`
@@ -234,6 +236,7 @@ export default function App() {
   const [customAnimationMode, setCustomAnimationMode] = useState(false)
   const [customAnimationCss, setCustomAnimationCss] = useState('textFloat 9200ms cubic-bezier(.2,.75,.2,1) 0ms infinite normal both running')
   const [mobilePanel, setMobilePanel] = useState('canvas')
+  const [fishAmount, setFishAmount] = useState(4)
   const [themeVersion, setThemeVersion] = useState(0)
 
   useEffect(() => { checkHealth().then(setHealth) }, [])
@@ -247,16 +250,21 @@ export default function App() {
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
     return () => observer.disconnect()
   }, [])
+  useEffect(() => {
+    document.fonts?.load(`16px '${BOOK_DEFAULT_FONT_FAMILY}'`).then(() => setThemeVersion((value) => value + 1)).catch(() => {})
+  }, [])
 
   const purpose = purposeById(purposeId)
   const paletteValue = paletteId === 'custom' ? customPalette : paletteId
 
   const spec = useMemo(() => {
     if (!fontInfo || !purpose) return null
-    const measurer = makeMeasurer(RENDER_FONT_FAMILY)
+    const renderFamily = fontInfo.isSystem && purpose.group === 'Книги' ? BOOK_DEFAULT_FONT_FAMILY : RENDER_FONT_FAMILY
+    const measurer = makeMeasurer(renderFamily)
     const base = generateLayout({
       purpose, metrics: fontInfo.metrics, content, variant, palette: paletteValue, measurer,
     })
+    base.meta.renderFontFamily = renderFamily
     if (purpose.group === 'Книги' || purpose.group === 'Цифровые устройства') {
       const themedBackground = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#ffffff'
       base.canvas.background.color = themedBackground
@@ -414,7 +422,8 @@ export default function App() {
     if (!spec) return
     setExporting(true)
     try {
-      await exportPng(spec, makeMeasurer(RENDER_FONT_FAMILY), fontInfo.fontCss, 1)
+      const family = spec.meta?.renderFontFamily || RENDER_FONT_FAMILY
+      await exportPng(spec, makeMeasurer(family), family === BOOK_DEFAULT_FONT_FAMILY ? ASTRA_FONT_CSS : fontInfo.fontCss, 1)
     } finally {
       setExporting(false)
     }
@@ -422,7 +431,8 @@ export default function App() {
 
   function onExportSvg() {
     if (!spec) return
-    exportSvg(spec, makeMeasurer(RENDER_FONT_FAMILY), fontInfo.fontCss)
+    const family = spec.meta?.renderFontFamily || RENDER_FONT_FAMILY
+    exportSvg(spec, makeMeasurer(family), family === BOOK_DEFAULT_FONT_FAMILY ? ASTRA_FONT_CSS : fontInfo.fontCss)
   }
 
   return (
@@ -457,6 +467,8 @@ export default function App() {
           onRandomPalette={onRandomPalette}
           content={content}
           onContentField={onContentField}
+          fishAmount={fishAmount}
+          onFishAmount={setFishAmount}
           onAddImage={onAddImage}
           onRemoveImage={onRemoveImage}
           spec={spec}
