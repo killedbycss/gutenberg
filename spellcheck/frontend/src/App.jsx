@@ -41,6 +41,7 @@ function splitPages(value, capacity) {
 }
 
 export default function App() {
+  const [mobilePane, setMobilePane] = useState('content');
   const [text, setText] = useState(DEMO);
   const [language, setLanguage] = useState('auto');
   const [enableStyle, setEnableStyle] = useState(false);
@@ -177,7 +178,8 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="spell-layout">
+      <nav className="mobile-pane-tabs"><button className={mobilePane === 'tools' ? 'on' : ''} onClick={() => setMobilePane('tools')}>Настройки</button><button className={mobilePane === 'content' ? 'on' : ''} onClick={() => setMobilePane('content')}>Листы</button></nav>
+      <div className={`spell-layout mobile-pane-${mobilePane}`}>
         <aside className="spell-sidebar">
           <Toolbar
             language={language} onLanguage={setLanguage}

@@ -78,9 +78,23 @@ body {
 /* ---------- Layout ---------- */
 .layout { display: grid; grid-template-columns: 300px 1fr; gap: 18px; align-items: start; }
 .layout.with-properties { grid-template-columns: 300px minmax(0, 1fr) 280px; }
+.mobile-panel-tabs { display: none; }
 @media (min-width: 901px) and (max-width: 1100px) { .layout.with-properties { grid-template-columns: 280px minmax(0, 1fr); } .properties-panel { grid-column: 1 / -1; position: static; min-height: auto; } }
 @media (max-width: 900px) { .layout, .layout.with-properties { grid-template-columns: 1fr; } .toolbar, .properties-panel { position: static; min-height: auto; max-height: none; margin: 0; border: 1px solid var(--border); overflow: visible; } }
 @media (max-width: 900px) { .module-actions { position: static; min-height: 44px; } .main { padding-top: 0; } }
+@media (max-width: 900px) {
+  body { padding-bottom: 58px; }
+  .mobile-panel-tabs { position: fixed; z-index: 40; left: 10px; right: 10px; bottom: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 4px; border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--surface) 94%, transparent); box-shadow: 0 8px 30px rgba(0,0,0,.16); backdrop-filter: blur(14px); }
+  .mobile-panel-tabs button { min-height: 40px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: 12px var(--font); }
+  .mobile-panel-tabs button.on { background: var(--surface-2); color: var(--text); font-weight: 600; }
+  .layout.with-properties > .main { display: none; }
+  .layout.with-properties > .mobile-left-panel, .layout.with-properties > .mobile-right-panel { display: none; }
+  .layout.with-properties.mobile-panel-canvas > .main { display: block; }
+  .layout.with-properties.mobile-panel-left > .mobile-left-panel, .layout.with-properties.mobile-panel-right > .mobile-right-panel { display: block; position: fixed; z-index: 30; left: 0; right: 0; bottom: 56px; max-height: min(68vh, 620px); overflow-y: auto; border-top: 1px solid var(--border); border-radius: 16px 16px 0 0; background: var(--surface); box-shadow: 0 -12px 36px rgba(0,0,0,.14); }
+  .layout.with-properties.mobile-panel-left > .mobile-left-panel .toolbar, .layout.with-properties.mobile-panel-left > .toolbar { position: static; min-height: auto; max-height: none; margin: 0; border: 0; overflow: visible; padding: 18px 16px 28px; }
+  .layout.with-properties.mobile-panel-right > .mobile-right-panel .properties-panel { position: static; min-height: auto; max-height: none; margin: 0; border: 0; overflow: visible; padding: 18px 16px 28px; }
+  .mobile-panel-canvas .main { width: 100%; min-width: 0; }
+}
 
 /* ---------- Sidebar ---------- */
 .toolbar {
@@ -291,10 +305,9 @@ body {
 .bento-sub { margin: 4px 0 0; font-size: 13px; color: var(--muted); max-width: 540px; }
 .bento-grid {
   display: grid; grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(3, 150px); gap: 0;
+  grid-template-rows: repeat(3, 1fr); gap: 0; aspect-ratio: 16 / 9;
   overflow: hidden;
 }
-@media (max-width: 760px) { .bento-grid { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 110px); } }
 .bento-tile {
   position: relative; overflow: hidden; padding: 0; cursor: pointer;
   border: 0; border-radius: 0; background: var(--surface-2);
@@ -336,7 +349,8 @@ body {
 .properties-panel.vision-achromatopsia .palette-strip-color, .properties-panel.vision-achromatopsia input[type=color] { filter: grayscale(1); }
 .hex-field > div { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 .hex-field > div input { min-width: 0; border: 0; }
-.hex-field > div button { width: 30px; border: 0; border-left: 1px solid var(--border); background: var(--surface-2); color: var(--muted); cursor: pointer; }
+.hex-field > div button { width: 42px; min-height: 38px; border: 0; border-left: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; font-size: 21px; line-height: 1; }
+.palette-image-button { width: 100%; margin-bottom: 12px; padding: 9px 10px; border: 1px dashed var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: 12px var(--font); cursor: pointer; }
 .vision-protanopia .bento-grid { filter: sepia(.18) saturate(.72) hue-rotate(-12deg); }
 .vision-deuteranopia .bento-grid { filter: sepia(.12) saturate(.68) hue-rotate(8deg); }
 .vision-tritanopia .bento-grid { filter: sepia(.1) saturate(.72) hue-rotate(35deg); }
@@ -355,17 +369,12 @@ body {
 .css-animation-line > span { display: block; margin-bottom: 5px; color: var(--muted); font-size: 11px; }
 .css-animation-line textarea { width: 100%; min-height: 72px; resize: vertical; border: 1px solid var(--border); border-radius: 8px; padding: 9px; background: var(--surface); color: var(--text); font: 10px/1.5 var(--mono); }
 .css-animation-line textarea:disabled { opacity: .7; background: var(--surface-2); }
-.bezier-editor { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-.bezier-editor label { color: var(--muted); font-size: 9px; }
-.bezier-editor input { width: 100%; border: 1px solid var(--border); border-radius: 5px; padding: 4px; background: var(--surface); color: var(--text); font: 10px var(--mono); }
-.bezier-line { position: relative; grid-column: 1 / -1; height: 58px; border: 1px solid var(--border); border-radius: 7px; background: linear-gradient(135deg, transparent 49%, var(--border) 50%, transparent 51%); }
-.bezier-line i { position: absolute; width: 9px; height: 9px; margin: -4px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 .layout.with-properties > .main { border-left: 1px solid var(--border); padding-left: 18px; }
 @media (max-width: 600px) {
   .app { padding: 0 10px; }
   .toolbar { padding: 16px 12px; }
   .properties-panel { padding: 14px 12px; margin-right: 0; }
-  .bento-grid { gap: 0; grid-template-rows: repeat(3, 86px); }
+  .bento-grid { gap: 0; }
   .bento-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
   .bento-actions .btn-primary { grid-column: 1 / -1; }
   .bento-head { gap: 10px; }

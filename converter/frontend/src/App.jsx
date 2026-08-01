@@ -7,6 +7,7 @@ import CompressionPanel from './components/CompressionPanel.jsx'
 import { fetchFormats, analyzeFonts, convertFonts, downloadBlob } from './api.js'
 
 export default function App() {
+  const [mobilePane, setMobilePane] = useState('content')
   const [formats, setFormats] = useState(null)
   const [items, setItems] = useState([]) // [{ id, file, report|null }]
   const [selected, setSelected] = useState(new Set())
@@ -127,13 +128,14 @@ export default function App() {
 
   return (
     <div className="app">
+      <nav className="mobile-pane-tabs"><button className={mobilePane === 'tools' ? 'on' : ''} onClick={() => setMobilePane('tools')}>Параметры</button><button className={mobilePane === 'content' ? 'on' : ''} onClick={() => setMobilePane('content')}>Файлы</button></nav>
       {formats && !formats.woff2 && (
         <div className="health-warn module-warning">WOFF2 недоступен: нет brotli на сервере</div>
       )}
 
       {error && <div className="banner banner-err">{error}</div>}
 
-      <div className="layout">
+      <div className={`layout mobile-pane-${mobilePane}`}>
         {formats ? (
           <FormatPicker
             targets={formats.targets}

@@ -12,6 +12,7 @@ const LS_EXCEPTIONS = 'typograph.exceptions'
 const LS_SETTINGS = 'typograph.settings'
 
 export default function App() {
+  const [mobilePane, setMobilePane] = useState('content')
   const [ruleTypes, setRuleTypes] = useState([])
   const [enabledTypes, setEnabledTypes] = useState(['quotes', 'dashes', 'nbsp'])
   const [enDashStyle, setEnDashStyle] = useState('us')
@@ -129,7 +130,8 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="layout">
+      <nav className="mobile-pane-tabs"><button className={mobilePane === 'tools' ? 'on' : ''} onClick={() => setMobilePane('tools')}>Настройки</button><button className={mobilePane === 'content' ? 'on' : ''} onClick={() => setMobilePane('content')}>Текст</button></nav>
+      <div className={`layout mobile-pane-${mobilePane}`}>
         <Toolbar
           ruleTypes={ruleTypes}
           enabledTypes={enabledTypes}

@@ -70,6 +70,7 @@
       min-width: 0; overflow-x: auto; scrollbar-width: none;
     }
     .tabs::-webkit-scrollbar { display: none; }
+    .menu-toggle { display: none; }
     .tab {
       appearance: none; border: 0; background: transparent; color: var(--muted);
       font-family: inherit; font-size: 14px; font-weight: 500;
@@ -135,7 +136,10 @@
       .topbar { gap: 6px; padding: 0 8px; }
       .brand .wordmark { display: none; }
       .brand { padding-right: 0; }
-      .tab { padding: 0 9px; gap: 6px; }
+      .menu-toggle { display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); font: 20px/1 var(--font); }
+      .tabs { display: none; position: fixed; z-index: 45; top: 48px; left: 8px; right: 8px; height: auto; padding: 7px; flex-direction: column; align-items: stretch; overflow: visible; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: 0 14px 36px rgba(0,0,0,.18); }
+      .tabs.open { display: flex; }
+      .tab { min-height: 40px; padding: 0 11px; gap: 6px; margin: 0; }
       .tab .kbd { display: none; }
       .icon-btn .label { display: none; }
     }
@@ -147,6 +151,8 @@
       <img class="brand-icon" src="./github-pages/assets/studio-icon.png" alt="" />
       <div class="wordmark">Гутенберг</div>
     </div>
+
+    <button class="menu-toggle" id="menu-toggle" aria-label="Открыть разделы" aria-expanded="false">☰</button>
 
     <nav class="tabs" role="tablist" aria-label="Модули">
       <button class="tab" role="tab" data-mod="spellcheck">Орфография <span class="kbd">⌥1</span></button>
@@ -198,6 +204,8 @@
       var stage = document.getElementById('stage');
       var loader = document.getElementById('loader');
       var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+      var tabsMenu = document.querySelector('.tabs');
+      var menuToggle = document.getElementById('menu-toggle');
       var frames = {};
       var loaded = {};
       var THEME_KEY = 'studio.theme';
@@ -273,20 +281,26 @@
       }
       applyTheme(theme);
 
-      // Создаём три iframe сразу — так состояние каждого модуля сохраняется
-      // при переключении вкладок (ничего не перезагружается).
+      // Создаём оболочки iframe сразу, но src назначаем при первом открытии.
+      // Так слабое соединение не скачивает все модули одновременно, а уже
+      // открытые разделы сохраняют состояние при переключении.
       MODULES.forEach(function (mod) {
         if (mod === 'bento') { frames.bento = frames.layouts; loaded.bento = loaded.layouts; return; }
         var f = document.createElement('iframe');
         f.className = 'frame';
         f.title = LABELS[mod];
-        f.src = SITE_ROOT + 'app/' + mod + '/';
+        f.setAttribute('data-src', SITE_ROOT + 'app/' + mod + '/');
         f.setAttribute('data-mod', mod);
         f.addEventListener('load', function () {
           loaded[mod] = true;
           if (mod === 'layouts') loaded.bento = true;
           try { f.contentDocument.documentElement.setAttribute('data-theme', theme); } catch (e) {}
           try { injectFont(f.contentDocument); } catch (e) {}
+          if (mod === 'layouts') {
+            [0, 120, 400].forEach(function (delay) { setTimeout(function () {
+              try { f.contentWindow.postMessage({ type: 'studio-mode', mode: active === 'bento' ? 'bento' : 'editor' }, '*'); } catch (e) {}
+            }, delay); });
+          }
           updateLoader();
         });
         stage.appendChild(f);
@@ -302,6 +316,8 @@
       function activate(mod) {
         if (MODULES.indexOf(mod) === -1) mod = MODULES[0];
         active = mod;
+        var targetFrame = frames[mod];
+        if (!targetFrame.getAttribute('src')) targetFrame.setAttribute('src', targetFrame.getAttribute('data-src'));
         Array.from(new Set(Object.keys(frames).map(function (m) { return frames[m]; }))).forEach(function (frame) { frame.classList.remove('active'); });
         frames[mod].classList.add('active');
         if (mod === 'layouts' || mod === 'bento') {
@@ -316,8 +332,9 @@
       }
 
       tabs.forEach(function (t) {
-        t.addEventListener('click', function () { activate(t.getAttribute('data-mod')); });
+        t.addEventListener('click', function () { activate(t.getAttribute('data-mod')); tabsMenu.classList.remove('open'); menuToggle.setAttribute('aria-expanded', 'false'); });
       });
+      menuToggle.addEventListener('click', function () { var open = tabsMenu.classList.toggle('open'); menuToggle.setAttribute('aria-expanded', String(open)); });
 
       // Горячие клавиши: Alt (⌥) + 1/2/3/4 — переключение воркспейсов.
       // Alt, а не ⌘/Ctrl: ⌘/Ctrl+цифра в браузере переключает вкладки браузера.

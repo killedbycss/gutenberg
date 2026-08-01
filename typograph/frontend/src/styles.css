@@ -501,3 +501,13 @@ button.ghost, .segmented button, .check, .mk { transition: background .12s ease,
 .toolbar, .pane { animation: sectionIn .28s ease-out backwards; }
 .pane:nth-child(2) { animation-delay: .04s; }
 @media (prefers-reduced-motion: reduce) { .toolbar, .pane, .code-mark { animation: none !important; } }
+.mobile-pane-tabs { display: none; }
+@media (max-width: 900px) {
+  body { padding-bottom: 58px; }
+  .mobile-pane-tabs { position: fixed; z-index: 40; left: 10px; right: 10px; bottom: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 4px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: 0 8px 30px rgba(0,0,0,.16); }
+  .mobile-pane-tabs button { min-height: 40px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: 12px var(--font); }
+  .mobile-pane-tabs button.on { background: var(--surface-2); color: var(--text); font-weight: 600; }
+  .layout > .toolbar, .layout > .panes { display: none; }
+  .layout.mobile-pane-content > .panes { display: grid; }
+  .layout.mobile-pane-tools > .toolbar { display: flex; position: fixed; z-index: 30; left: 0; right: 0; bottom: 56px; min-height: 0; max-height: 68vh; overflow-y: auto; margin: 0; padding: 18px 16px 28px; border: 0; border-top: 1px solid var(--border); border-radius: 16px 16px 0 0; background: var(--surface); box-shadow: 0 -12px 36px rgba(0,0,0,.14); }
+}

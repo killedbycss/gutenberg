@@ -14,11 +14,13 @@ export default function PropertiesPanel({
   frame, onMove, paletteColors, paletteLocked, paletteSelected,
   onPaletteColor, onTogglePaletteLock, onTogglePaletteColor, onRandomPalette,
   onAddPaletteColor, onRemovePaletteColor,
+  onExtractPalette,
   paletteWcag, onPaletteWcag, colorVision, onColorVision,
   images, selectedId, onSelect, onAddImage, onRemoveImage,
   spec, onToggleHidden,
 }) {
   const imageInput = useRef(null)
+  const paletteImageInput = useRef(null)
   const [colorModel, setColorModel] = useState('rgb')
   const fields = [['w', 'Ширина'], ['h', 'Высота'], ['x', 'X'], ['y', 'Y']]
   const copyHex = async (color) => { try { await navigator.clipboard.writeText(color.toUpperCase()) } catch {} }
@@ -30,6 +32,12 @@ export default function PropertiesPanel({
           <div className="segmented small"><button className={colorModel === 'rgb' ? 'on' : ''} onClick={() => setColorModel('rgb')}>RGB</button><button className={colorModel === 'cmyk' ? 'on' : ''} onClick={() => setColorModel('cmyk')}>CMYK</button></div>
           <div className="palette-count"><button onClick={onRemovePaletteColor}>−</button><span>{paletteColors.length}</span><button onClick={onAddPaletteColor}>+</button></div>
         </div>
+        <button className="palette-image-button" onClick={() => paletteImageInput.current?.click()}>▧ Извлечь цвета из картинки</button>
+        <input ref={paletteImageInput} type="file" hidden accept="image/png,image/jpeg,image/webp,image/gif" onChange={async (event) => {
+          const file = event.target.files[0]
+          if (file) await onExtractPalette(file)
+          event.target.value = ''
+        }} />
         <div className="palette-accessibility">
           <label className="bento-check"><input type="checkbox" checked={paletteWcag} onChange={(event) => onPaletteWcag(event.target.checked)} /> Контраст WCAG</label>
           <label><span>Цветовое зрение</span><select value={colorVision} onChange={(event) => onColorVision(event.target.value)}>
@@ -50,7 +58,7 @@ export default function PropertiesPanel({
               <button onClick={() => onTogglePaletteLock(index)}>{paletteLocked.has(index) ? '●' : '○'}</button>
             </div>
             {colorModel === 'rgb' && <div className="strip-rgb">
-              <label className="hex-field"><span>HEX</span><div><input key={`hex-${color}`} defaultValue={color.toUpperCase()} onBlur={(event) => { const next = normalizeHex(event.target.value); if (next) onPaletteColor(index, next); else event.target.value = color.toUpperCase() }} aria-label={`HEX цвета ${index + 1}`} /><button title="Копировать HEX" onClick={() => copyHex(color)}>⧉</button></div></label>
+              <label className="hex-field"><span>HEX</span><div><input key={`hex-${color}`} defaultValue={color.toUpperCase()} onBlur={(event) => { const next = normalizeHex(event.target.value); if (next) onPaletteColor(index, next); else event.target.value = color.toUpperCase() }} aria-label={`HEX цвета ${index + 1}`} /><button title="Копировать HEX" aria-label={`Копировать HEX ${color}`} onClick={() => copyHex(color)}>⧉</button></div></label>
               <label><span>RGBA</span><input key={`rgba-${color}`} defaultValue={rgba} onBlur={(event) => { const next = rgbaToHex(event.target.value); if (next) onPaletteColor(index, next); else event.target.value = rgba }} aria-label={`RGBA цвета ${index + 1}`} /></label>
             </div>}
             {colorModel === 'cmyk' && <div className="strip-cmyk">{['c','m','y','k'].map((channel) => <label key={channel}><span>{channel.toUpperCase()}</span><input type="number" min="0" max="100" value={cmyk[channel]} onChange={(event) => onPaletteColor(index, cmykToHex({...cmyk, [channel]: Math.max(0, Math.min(100, +event.target.value))}))} /></label>)}</div>}

@@ -221,9 +221,9 @@ export default function App() {
   const [bentoDistance, setBentoDistance] = useState(18)
   const [bentoStagger, setBentoStagger] = useState(90)
   const [bentoEasing, setBentoEasing] = useState('smooth')
-  const [bentoBezier, setBentoBezier] = useState([.2, .75, .2, 1])
   const [customAnimationMode, setCustomAnimationMode] = useState(false)
   const [customAnimationCss, setCustomAnimationCss] = useState('textFloat 9200ms cubic-bezier(.2,.75,.2,1) 0ms infinite normal both running')
+  const [mobilePanel, setMobilePanel] = useState('canvas')
 
   useEffect(() => { checkHealth().then(setHealth) }, [])
   useEffect(() => {
@@ -327,6 +327,15 @@ export default function App() {
     setPaletteSelected((current) => new Set([...current].filter((index) => index !== last)))
   }
 
+  async function onExtractPalette(file) {
+    const colors = await extractImagePalette(file, paletteColors.length)
+    setPaletteColors(colors)
+    setPaletteSelected(new Set(colors.map((_, index) => index)))
+    setPaletteLocked(new Set())
+    setPaletteId('custom')
+    setBgColor(null)
+  }
+
   function onContentField(role, value) {
     setContent((c) => ({ ...c, [role]: value }))
   }
@@ -401,12 +410,13 @@ export default function App() {
         </div>
       </div>
 
-      <div className="layout with-properties">
-        {mode === 'bento' ? <aside className="toolbar bento-controls">
-          <AnimationEditor animation={bentoAnimation} onAnimation={setBentoAnimation} speed={bentoSpeed} onSpeed={setBentoSpeed} distance={bentoDistance} onDistance={setBentoDistance} stagger={bentoStagger} onStagger={setBentoStagger} easing={bentoEasing} onEasing={setBentoEasing} bezier={bentoBezier} onBezier={setBentoBezier} customMode={customAnimationMode} onCustomMode={setCustomAnimationMode} customCss={customAnimationCss} onCustomCss={setCustomAnimationCss} />
+      <nav className="mobile-panel-tabs" aria-label="Панели редактора"><button className={mobilePanel === 'left' ? 'on' : ''} onClick={() => setMobilePanel('left')}>Настройки</button><button className={mobilePanel === 'canvas' ? 'on' : ''} onClick={() => setMobilePanel('canvas')}>Холст</button><button className={mobilePanel === 'right' ? 'on' : ''} onClick={() => setMobilePanel('right')}>Свойства</button></nav>
+      <div className={`layout with-properties mobile-panel-${mobilePanel}`}>
+        {mode === 'bento' ? <aside className="toolbar bento-controls mobile-left-panel">
+          <AnimationEditor animation={bentoAnimation} onAnimation={setBentoAnimation} speed={bentoSpeed} onSpeed={setBentoSpeed} distance={bentoDistance} onDistance={setBentoDistance} stagger={bentoStagger} onStagger={setBentoStagger} easing={bentoEasing} onEasing={setBentoEasing} customMode={customAnimationMode} onCustomMode={setCustomAnimationMode} customCss={customAnimationCss} onCustomCss={setCustomAnimationCss} />
           <FontPanel fontInfo={fontInfo} loadingFont={loadingFont} fontError={fontError} onUploadFont={onUploadFont} />
           <div className="tool-group anim-in"><button className="btn-ghost wide" onClick={() => setBentoSeed((s) => s + 1)}>↻ Новая композиция</button></div>
-        </aside> : <Sidebar
+        </aside> : <div className="mobile-left-panel"><Sidebar
           fontInfo={fontInfo}
           loadingFont={loadingFont}
           fontError={fontError}
@@ -437,7 +447,7 @@ export default function App() {
           onBgColor={setBgColor}
           onResetEdits={resetEdits}
           hasEdits={hasEdits}
-        />}
+        /></div>}
 
         <main className="main">
           {!spec ? (
@@ -460,7 +470,6 @@ export default function App() {
               distance={bentoDistance}
               stagger={bentoStagger}
               easing={bentoEasing}
-              easingCss={bentoEasing === 'bezier' ? `cubic-bezier(${bentoBezier.join(',')})` : ''}
               showWcag={paletteWcag}
               colorVision={colorVision}
               fontCss={fontInfo.fontCss}
@@ -479,17 +488,43 @@ export default function App() {
             />
           )}
         </main>
-        <PropertiesPanel frame={mode === 'editor' ? selected : null} onMove={onMoveFrame}
+        <div className="mobile-right-panel"><PropertiesPanel frame={mode === 'editor' ? selected : null} onMove={onMoveFrame}
             paletteColors={paletteColors} paletteLocked={paletteLocked} paletteSelected={paletteSelected}
             onPaletteColor={onPaletteColor} onTogglePaletteLock={onTogglePaletteLock}
             onTogglePaletteColor={onTogglePaletteColor} onRandomPalette={onRandomPalette}
             onAddPaletteColor={onAddPaletteColor} onRemovePaletteColor={onRemovePaletteColor}
+            onExtractPalette={onExtractPalette}
             paletteWcag={paletteWcag} onPaletteWcag={setPaletteWcag}
             colorVision={colorVision} onColorVision={setColorVision}
             images={content.images || []} selectedId={selectedId} onSelect={setSelectedId}
             onAddImage={onAddImage} onRemoveImage={onRemoveImage}
-            spec={spec} onToggleHidden={onToggleHidden} />
+            spec={spec} onToggleHidden={onToggleHidden} /></div>
       </div>
     </div>
   )
+}
+
+async function extractImagePalette(file, count) {
+  const url = URL.createObjectURL(file)
+  try {
+    const image = await new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = url })
+    const scale = Math.min(1, 96 / Math.max(image.naturalWidth, image.naturalHeight))
+    const canvas = document.createElement('canvas'); canvas.width = Math.max(1, Math.round(image.naturalWidth * scale)); canvas.height = Math.max(1, Math.round(image.naturalHeight * scale))
+    const ctx = canvas.getContext('2d', { willReadFrequently: true }); ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data
+    const pixels = []
+    for (let i = 0; i < data.length; i += 16) if (data[i + 3] > 180) pixels.push([data[i], data[i + 1], data[i + 2]])
+    if (!pixels.length) throw new Error('В изображении нет непрозрачных цветов')
+    let centers = Array.from({ length: count }, (_, index) => pixels[Math.floor(index * (pixels.length - 1) / Math.max(1, count - 1))].slice())
+    for (let pass = 0; pass < 8; pass += 1) {
+      const sums = centers.map(() => [0, 0, 0, 0])
+      pixels.forEach((pixel) => {
+        let best = 0; let distance = Infinity
+        centers.forEach((center, index) => { const next = (pixel[0]-center[0])**2 + (pixel[1]-center[1])**2 + (pixel[2]-center[2])**2; if (next < distance) { distance = next; best = index } })
+        sums[best][0] += pixel[0]; sums[best][1] += pixel[1]; sums[best][2] += pixel[2]; sums[best][3] += 1
+      })
+      centers = centers.map((center, index) => sums[index][3] ? sums[index].slice(0, 3).map((value) => value / sums[index][3]) : center)
+    }
+    return centers.map((rgb) => `#${rgb.map((value) => Math.round(value).toString(16).padStart(2, '0')).join('')}`)
+  } finally { URL.revokeObjectURL(url) }
 }
