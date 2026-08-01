@@ -25,6 +25,7 @@ export default function Sidebar({
   bgColor, onBgColor, onResetEdits, hasEdits,
 }) {
   const fontInput = useRef(null)
+  const activePurpose = PURPOSES.find((item) => item.id === purposeId)
 
   const groups = PURPOSES.reduce((acc, p) => {
     (acc[p.group] = acc[p.group] || []).push(p)
@@ -95,6 +96,14 @@ export default function Sidebar({
       {/* --- Контент --- */}
       <div className="tool-group anim-in">
         <h3>Контент</h3>
+        {(activePurpose?.group === 'Книги' || activePurpose?.group === 'Цифровые устройства') && (
+          <button className="btn-ghost wide fish-layout" onClick={() => {
+            onContentField('headline', 'Шрифт во всей красе')
+            onContentField('subhead', 'Образец для цифрового носителя')
+            onContentField('body', 'Типографика помогает выстроить ясную и выразительную систему. Ритм строки, поля и интервалы создают спокойное пространство для чтения. Форма каждой буквы раскрывается в разных кеглях и сценариях использования.')
+            onContentField('caption', 'Гутенберг · образец набора')
+          }}>Сгенерировать рыба-текст</button>
+        )}
         {ROLES.map((role) => (
           <label key={role} className="field">
             <span className="field-label">{ROLE_LABEL[role]}</span>

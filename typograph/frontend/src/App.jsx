@@ -269,7 +269,7 @@ function HighlightedCode({ code, edits, onUndo }) {
 }
 
 function textToHtml(text) {
-  return text.split('\n').map((line) => `<div>${escapeHtml(line) || '<br>'}</div>`).join('')
+  return escapeHtml(text).replace(/\n/g, '<br>')
 }
 
 function htmlToText(html) {
@@ -281,16 +281,19 @@ function applyEditsToHtml(html, edits) {
   const doc = new DOMParser().parseFromString(`<div id="root">${html}</div>`, 'text/html')
   const root = doc.querySelector('#root')
   const nodes = flattenRichText(root).nodes
-  for (const entry of nodes) {
-    let value = entry.node.data
-    const local = edits.filter((edit) => edit.osrc_start >= entry.start && edit.osrc_end <= entry.end)
-    for (const edit of local.sort((a, b) => b.osrc_start - a.osrc_start)) {
-      const start = edit.osrc_start - entry.start; const end = edit.osrc_end - entry.start
-      value = value.slice(0, start) + edit.new + value.slice(end)
-    }
-    entry.node.data = value
+  // Идём справа налево, чтобы исходные координаты не сдвигались. Range умеет
+  // заменить фрагмент даже если он пересекает несколько inline-тегов.
+  for (const edit of [...edits].sort((a, b) => b.osrc_start - a.osrc_start)) {
+    const startEntry = nodes.find((entry) => edit.osrc_start >= entry.start && edit.osrc_start <= entry.end)
+    const endEntry = [...nodes].reverse().find((entry) => edit.osrc_end >= entry.start && edit.osrc_end <= entry.end)
+    if (!startEntry || !endEntry) continue
+    const range = doc.createRange()
+    range.setStart(startEntry.node, Math.max(0, edit.osrc_start - startEntry.start))
+    range.setEnd(endEntry.node, Math.max(0, edit.osrc_end - endEntry.start))
+    range.deleteContents()
+    range.insertNode(doc.createTextNode(edit.new))
   }
-  return root.innerHTML
+  return normalizeRichHtml(root.innerHTML)
 }
 
 function normalizeRichHtml(html) {
@@ -302,6 +305,18 @@ function normalizeRichHtml(html) {
     span.innerHTML = font.innerHTML
     font.replaceWith(span)
   })
+  // contentEditable любит добавлять служебные div при Enter/вставке. В итоговом
+  // коде они не нужны: сохраняем только реальные inline-стили и переносы.
+  root.querySelectorAll('div, p').forEach((block) => {
+    if (block.previousSibling && block.previousSibling.nodeName !== 'BR') {
+      block.before(doc.createElement('br'))
+    }
+    block.replaceWith(...block.childNodes)
+  })
+  root.querySelectorAll('span').forEach((span) => {
+    if (!span.getAttribute('style')?.trim()) span.replaceWith(...span.childNodes)
+  })
+  while (root.lastChild?.nodeName === 'BR') root.lastChild.remove()
   return root.innerHTML
 }
 

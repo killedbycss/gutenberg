@@ -369,7 +369,7 @@ body {
 .rich-color::after { content: ''; position: absolute; left: 7px; right: 7px; bottom: 4px; height: 3px; border-radius: 3px; background: #3d3650; pointer-events: none; }
 .rich-color--fill::after { background: #cdbaf7; }
 .rich-color--fill span { color: #8061c5; transform: rotate(45deg); }
-.rich-editor { min-height: clamp(300px, 55vh, 520px); padding: 22px; border: 0; outline: 0; white-space: pre-wrap; font-family: Georgia, serif; font-size: 17px; line-height: 1.7; }
+.rich-editor { min-height: clamp(300px, 55vh, 520px); padding: 22px; border: 0; outline: 0; white-space: pre-wrap; font-family: var(--font); font-size: 17px; line-height: 1.7; }
 .html-code { margin: 0; min-height: clamp(300px, 55vh, 520px); max-height: 65vh; overflow: auto; white-space: pre-wrap; font-family: var(--mono); font-size: 13px; color: var(--text); }
 .code-mark { padding: 1px 2px; margin: 0 -1px; border-radius: 4px; cursor: pointer; color: inherit; background: color-mix(in srgb, var(--mk-quotes-bg) 58%, transparent); box-shadow: inset 0 -1px color-mix(in srgb, var(--mk-quotes-fg) 35%, transparent); animation: codeSweep .7s cubic-bezier(.16,1,.3,1) both; transition: background .25s, box-shadow .25s, filter .25s; }
 .code-mark.mk-dashes { background: color-mix(in srgb, var(--mk-dashes-bg) 58%, transparent); box-shadow: inset 0 -1px color-mix(in srgb, var(--mk-dashes-fg) 35%, transparent); }

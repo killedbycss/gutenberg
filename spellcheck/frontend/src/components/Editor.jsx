@@ -17,6 +17,7 @@ export default function Editor({
   onIgnore,
   onAddToDictionary,
   navigateOffset,
+  contentStyle,
 }) {
   const containerRef = useRef(null);
   const taRef = useRef(null);
@@ -97,6 +98,7 @@ export default function Editor({
         aria-hidden="true"
         // хвостовой перевод строки держит высоту подложки равной textarea
         dangerouslySetInnerHTML={{ __html: html + '\n' }}
+        style={contentStyle}
       />
       <textarea
         ref={taRef}
@@ -117,6 +119,7 @@ export default function Editor({
           else if (ARROW_KEYS.includes(e.key)) locate();
         }}
         placeholder="Введите или вставьте текст…"
+        style={contentStyle}
       />
       {active && (
         <SuggestionPopup

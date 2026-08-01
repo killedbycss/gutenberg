@@ -29,7 +29,12 @@ function browserCorrect({ text, enabledTypes, enDashStyle, exceptions, defaultLa
       const original = args[0]
       const offset = args.at(-2)
       if (protectedText(original)) return original
-      const next = typeof replacement === 'function' ? replacement(...args) : replacement
+      // String.prototype.replace раскрывает $1/$2 только когда строка передана
+      // непосредственно в replace. Здесь используется callback, поэтому делаем
+      // подстановку групп явно, иначе в результат попадали буквальные "$1".
+      const next = typeof replacement === 'function'
+        ? replacement(...args)
+        : replacement.replace(/\$(\d+)/g, (_, index) => args[Number(index)] ?? '')
       if (next === original) return original
       const finalStart = offset
       edits.push({ id: edits.length, start: finalStart, end: finalStart + next.length,

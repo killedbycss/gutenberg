@@ -17,6 +17,28 @@ const DEMO = `Привет всем!  Это тестовый текст на р
 This are a sample text in english with some erors and bad grammar.`;
 
 const DEBOUNCE_MS = 550;
+const FISH_RU = ['Типографика помогает выстроить ясную и выразительную систему.', 'Хороший шрифт уверенно работает в заголовках, подписях и длинном тексте.', 'Ритм строки, поля и интервалы создают спокойное пространство для чтения.', 'Форма буквы раскрывается в разных кеглях и на разных носителях.'];
+const FISH_EN = ['Typography builds a clear and expressive visual system.', 'A good typeface works confidently in headlines, captions and long-form text.', 'Rhythm, margins and spacing create a calm space for reading.', 'Letterforms reveal their character across sizes and media.'];
+
+function makeFish(language, paragraphs = 6) {
+  const source = language === 'en-US' ? FISH_EN : FISH_RU
+  return Array.from({ length: paragraphs }, (_, i) => source.map((line, j) => source[(i + j) % source.length]).join(' ')).join('\n\n')
+}
+
+function splitPages(value, capacity) {
+  if (!value) return ['']
+  const pages = []
+  let rest = value
+  while (rest.length > capacity) {
+    let cut = rest.lastIndexOf('\n', capacity)
+    if (cut < capacity * .55) cut = rest.lastIndexOf(' ', capacity)
+    if (cut < capacity * .55) cut = capacity
+    pages.push(rest.slice(0, cut + (rest[cut] === '\n' ? 1 : 0)))
+    rest = rest.slice(cut + (rest[cut] === '\n' ? 1 : 0))
+  }
+  pages.push(rest)
+  return pages
+}
 
 export default function App() {
   const [text, setText] = useState(DEMO);
@@ -30,6 +52,10 @@ export default function App() {
   const [words, setWords] = useState([]);
   const [showDict, setShowDict] = useState(false);
   const [navigateOffset, setNavigateOffset] = useState(null);
+  const [fontSize, setFontSize] = useState(17);
+  const [pageFormat, setPageFormat] = useState('a4');
+  const [guides, setGuides] = useState(true);
+  const [contentFont, setContentFont] = useState(null);
 
   const reqId = useRef(0);
   const abortRef = useRef(null);
@@ -84,6 +110,15 @@ export default function App() {
   // Подсчёт слов (последовательности непробельных символов) и символов.
   const wordCount = useMemo(() => (text.match(/\S+/g) || []).length, [text]);
   const headings = useMemo(() => extractHeadings(text), [text]);
+  const pageCapacity = Math.max(700, Math.round((pageFormat === 'book' ? 2500 : 3300) * (17 / fontSize) ** 2));
+  const pages = useMemo(() => splitPages(text, pageCapacity), [text, pageCapacity]);
+
+  function uploadContentFont(file) {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setContentFont({ name: file.name.replace(/\.[^.]+$/, ''), url: reader.result })
+    reader.readAsDataURL(file)
+  }
 
   // Принять исправление: заменить фрагмент и мгновенно сдвинуть остальные ошибки
   // (полная перепроверка придёт следом по debounce).
@@ -163,15 +198,46 @@ export default function App() {
                 onClick={() => setNavigateOffset(heading.offset)}>{heading.text}</button>
             )) : <p>Добавьте строки «Глава…», «Раздел…» или заголовки через #.</p>}
           </section>
+          <section className="document-outline text-tools">
+            <h3>Образец текста</h3>
+            <div className="outline-actions">
+              <button onClick={() => setText(makeFish(language, 4))}>Рыба ×4</button>
+              <button onClick={() => setText(makeFish(language, 10))}>Рыба ×10</button>
+            </div>
+            <label className="control-row">Кегль <output>{fontSize}px</output>
+              <input type="range" min="8" max="96" value={fontSize} onChange={(e) => setFontSize(+e.target.value)} />
+            </label>
+            <label className="control-row">Формат
+              <select value={pageFormat} onChange={(e) => setPageFormat(e.target.value)}>
+                <option value="a4">A4</option><option value="book">Книга 145×215</option>
+              </select>
+            </label>
+            <label className="control-row check-row"><input type="checkbox" checked={guides} onChange={(e) => setGuides(e.target.checked)} /> Направляющие</label>
+            <label className="font-upload">Заменить шрифт<input type="file" accept=".otf,.ttf,.woff,.woff2" onChange={(e) => uploadContentFont(e.target.files[0])} /></label>
+            {contentFont && <button className="reset-font" onClick={() => setContentFont(null)}>Сбросить · {contentFont.name}</button>}
+          </section>
           {showDict && <DictionaryPanel words={words} onAdd={handleAddWord}
             onRemove={handleRemoveWord} onClose={() => setShowDict(false)} />}
           <Legend matches={matches} />
         </aside>
         <main className="spell-main">
           {ltAvailable === false && <div className="banner banner--warn">LanguageTool недоступен. Проверьте интернет.</div>}
-          <div className="workspace paper-workspace">
-            <Editor text={text} matches={matches} onChange={setText} navigateOffset={navigateOffset}
-              onApply={applyReplacement} onIgnore={ignoreMatch} onAddToDictionary={addToDictionary} />
+          {contentFont && <style>{`@font-face{font-family:'SpellContent';src:url(${contentFont.url});font-display:swap}`}</style>}
+          <div className={`workspace paper-workspace format-${pageFormat}${guides ? ' show-guides' : ''}`}>
+            <div className="paper-carousel" aria-label={`Страниц: ${pages.length}`}>
+              {pages.map((page, index) => {
+                const start = pages.slice(0, index).reduce((sum, item) => sum + item.length, 0)
+                return <div className="paper-page" key={`${index}-${pages.length}`}>
+                  <span className="page-number">{index + 1} / {pages.length}</span>
+                  <Editor text={page} matches={matches.filter((m) => m.offset >= start && m.offset < start + page.length).map((m) => ({ ...m, offset: m.offset - start }))}
+                    onChange={(next) => setText(text.slice(0, start) + next + text.slice(start + page.length))}
+                    navigateOffset={navigateOffset == null ? null : navigateOffset - start}
+                    onApply={(m, rep) => applyReplacement({ ...m, offset: m.offset + start }, rep)} onIgnore={(m) => ignoreMatch({ ...m, offset: m.offset + start })}
+                    onAddToDictionary={(m) => addToDictionary({ ...m, offset: m.offset + start })}
+                    contentStyle={{ fontSize, fontFamily: contentFont ? "'SpellContent', var(--font)" : 'var(--font)' }} />
+                </div>
+              })}
+            </div>
           </div>
         </main>
       </div>

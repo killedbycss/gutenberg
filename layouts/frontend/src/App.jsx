@@ -119,9 +119,9 @@ const BENTO_GRIDS = [
 ]
 
 const PURPOSES_BY_SHAPE = {
-  square: ['instagram-post'],
-  tall: ['instagram-story', 'poster-a3'],
-  wide: ['vk-cover', 'business-card'],
+  square: ['instagram-post', 'tablet-portrait'],
+  tall: ['instagram-story', 'poster-a3', 'mobile-portrait', 'book-a5', 'book-145x215', 'ebook-reader'],
+  wide: ['vk-cover', 'business-card', 'desktop-hd'],
 }
 
 const BENTO_COPY = [
@@ -215,6 +215,8 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(null)
   const [exporting, setExporting] = useState(false)
   const [bentoSeed, setBentoSeed] = useState(1)
+  const [bentoAnimation, setBentoAnimation] = useState('mixed')
+  const [bentoSpeed, setBentoSpeed] = useState(1)
 
   useEffect(() => { checkHealth().then(setHealth) }, [])
 
@@ -390,7 +392,16 @@ export default function App() {
       </div>
 
       <div className="layout with-properties">
-        <Sidebar
+        {mode === 'bento' ? <aside className="toolbar bento-controls">
+          <div className="tool-group anim-in"><h3>Редактор анимации</h3>
+            <label className="field"><span className="field-label">Движение</span><select className="select" value={bentoAnimation} onChange={(e) => setBentoAnimation(e.target.value)}>
+              <option value="mixed">Смешанное</option><option value="float">Всплытие</option><option value="reveal">Проявление</option><option value="drift">Сдвиг</option><option value="pulse">Импульс</option>
+            </select></label>
+            <label className="field"><span className="field-label">Скорость · {bentoSpeed.toFixed(1)}×</span><input type="range" min="0.5" max="2" step="0.1" value={bentoSpeed} onChange={(e) => setBentoSpeed(+e.target.value)} /></label>
+            <p className="hint-sm">Настройки применяются ко всей мозаике. PNG экспортируется с фирменной подписью.</p>
+          </div>
+          <div className="tool-group anim-in"><button className="btn-ghost wide" onClick={() => setBentoSeed((s) => s + 1)}>↻ Новая композиция</button></div>
+        </aside> : <Sidebar
           fontInfo={fontInfo}
           loadingFont={loadingFont}
           fontError={fontError}
@@ -421,7 +432,7 @@ export default function App() {
           onBgColor={setBgColor}
           onResetEdits={resetEdits}
           hasEdits={hasEdits}
-        />
+        />}
 
         <main className="main">
           {!spec ? (
@@ -438,6 +449,8 @@ export default function App() {
               seed={bentoSeed}
               onShuffle={() => setBentoSeed((s) => s + 1)}
               onPick={onPickBento}
+              animation={bentoAnimation}
+              speed={bentoSpeed}
             />
           ) : (
             <Preview
