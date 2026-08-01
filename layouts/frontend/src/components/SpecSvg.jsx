@@ -4,7 +4,7 @@ import { RENDER_FONT_FAMILY } from '../layout/schema'
 
 // Статический (не интерактивный) рендер LayoutSpec в SVG. Тот же расчёт, что и
 // в превью/экспорте (specToDrawOps). Используется в плитках бенто.
-export default function SpecSvg({ spec, measurer, placeholders = false, className, style, preserveAspectRatio = 'xMidYMid meet', textAnimation = '', stagger = 90 }) {
+export default function SpecSvg({ spec, measurer, placeholders = false, className, style, preserveAspectRatio = 'xMidYMid meet', textAnimation = '', stagger = 90, animationCss = '', showDeviceChrome = true }) {
   const draw = useMemo(
     () => (spec ? specToDrawOps(spec, measurer, { placeholders }) : null),
     [spec, measurer, placeholders],
@@ -19,8 +19,8 @@ export default function SpecSvg({ spec, measurer, placeholders = false, classNam
       style={{ aspectRatio: `${W} / ${H}`, display: 'block', ...style }}
       preserveAspectRatio={preserveAspectRatio}
     >
-      {draw.ops.map((op, i) => renderOp(op, i, textAnimation, stagger))}
-      <DeviceChrome purpose={spec.meta?.purpose} width={W} height={H} background={spec.canvas?.background?.color} />
+      {draw.ops.map((op, i) => renderOp(op, i, textAnimation, stagger, animationCss))}
+      {showDeviceChrome && <DeviceChrome purpose={spec.meta?.purpose} width={W} height={H} background={spec.canvas?.background?.color} />}
     </svg>
   )
 }
@@ -62,7 +62,7 @@ function isDark(hex = '#fff') {
   return (r * 299 + g * 587 + b * 114) / 1000 < 128
 }
 
-function renderOp(op, i, textAnimation, stagger) {
+function renderOp(op, i, textAnimation, stagger, animationCss) {
   if (op.kind === 'bg') {
     return <rect key={i} x="0" y="0" width={op.w} height={op.h} fill={op.color} />
   }
@@ -76,7 +76,7 @@ function renderOp(op, i, textAnimation, stagger) {
   if (op.kind === 'text') {
     return (
       <text key={i} className={textAnimation ? `bento-text text-${textAnimation}` : undefined}
-        style={{ animationDelay: `${i * stagger}ms` }} fontFamily={`'${RENDER_FONT_FAMILY}'`} fontSize={op.fontSize}
+        style={animationCss ? { animation: animationCss, animationDelay: `${i * stagger}ms` } : { animationDelay: `${i * stagger}ms` }} fontFamily={`'${RENDER_FONT_FAMILY}'`} fontSize={op.fontSize}
         fill={op.fill} textAnchor={op.anchor} letterSpacing={op.letterSpacing}>
         {op.lines.map((l, j) => <tspan key={j} x={l.x} y={l.y}>{l.text}</tspan>)}
       </text>

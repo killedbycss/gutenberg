@@ -4,12 +4,12 @@ import { makeMeasurer } from '../render/textLayout'
 import { RENDER_FONT_FAMILY } from '../layout/schema'
 import { GIFEncoder, quantize, applyPalette } from 'gifenc'
 
-export default function Bento({ items, fontReady, seed, onShuffle, onPick, animation = 'mixed', speed = 1, distance = 18, stagger = 90, easing = 'smooth', showWcag = true, colorVision = 'normal', fontCss = '' }) {
+export default function Bento({ items, fontReady, seed, onShuffle, onPick, animation = 'mixed', animationCss = '', speed = 1, distance = 18, stagger = 90, easing = 'smooth', easingCss = '', showWcag = true, colorVision = 'normal', fontCss = '' }) {
   const measurer = useMemo(() => makeMeasurer(RENDER_FONT_FAMILY), [fontReady])
   const gridRef = useRef(null)
   const [exporting, setExporting] = useState(false)
 
-  async function renderComposition() {
+  async function renderComposition(phase = null) {
     const grid = gridRef.current
     if (!grid) return null
       const box = grid.getBoundingClientRect(); const scale = 2
@@ -18,7 +18,8 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
       for (const tile of grid.querySelectorAll('.bento-tile')) {
         const svg = tile.querySelector('svg'); if (!svg) continue
         const rect = tile.getBoundingClientRect(); const copy = svg.cloneNode(true)
-        copy.setAttribute('width', String(rect.width)); copy.setAttribute('height', String(rect.height)); copy.setAttribute('preserveAspectRatio', 'xMidYMid meet')
+        copy.setAttribute('width', String(rect.width)); copy.setAttribute('height', String(rect.height)); copy.setAttribute('preserveAspectRatio', 'xMidYMid slice')
+        if (phase != null) copy.querySelectorAll('.bento-text').forEach((text) => applyTextFrame(text, phase, animationCss))
         if (fontCss) { const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs'); const style = document.createElementNS('http://www.w3.org/2000/svg', 'style'); style.textContent = fontCss; defs.appendChild(style); copy.prepend(defs) }
         const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml' }))
         const image = await new Promise((resolve, reject) => { const value = new Image(); value.onload = () => resolve(value); value.onerror = reject; value.src = url })
@@ -39,14 +40,14 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
   async function exportGif() {
     setExporting(true)
     try {
-      const source = await renderComposition(); if (!source) return
-      const width = Math.min(640, source.width); const height = Math.round(source.height * width / source.width)
+      const first = await renderComposition(0); if (!first) return
+      const width = Math.min(640, first.width); const height = Math.round(first.height * width / first.width)
       const frame = document.createElement('canvas'); frame.width = width; frame.height = height
       const ctx = frame.getContext('2d'); const encoder = GIFEncoder()
       for (let i = 0; i < 16; i += 1) {
-        const phase = i / 16 * Math.PI * 2
+        const source = i === 0 ? first : await renderComposition(i / 16)
         ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, width, height)
-        ctx.drawImage(source, 0, Math.sin(phase) * 2, width, height)
+        ctx.drawImage(source, 0, 0, width, height)
         const rgba = ctx.getImageData(0, 0, width, height); const palette = quantize(rgba.data, 256); const indexed = applyPalette(rgba.data, palette)
         encoder.writeFrame(indexed, width, height, { palette, delay: 100, repeat: 0 })
       }
@@ -70,7 +71,7 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
       </div>
 
       {/* key={seed} перезапускает анимацию «переключения» при каждом перемешивании */}
-      <div className={`bento-grid ease-${easing}`} key={seed} ref={gridRef} style={{ '--bento-speed': speed, '--bento-distance': `${distance}px` }}>
+      <div className={`bento-grid ease-${easing}`} key={seed} ref={gridRef} style={{ '--bento-speed': speed, '--bento-distance': `${distance}px`, ...(easingCss ? { '--bento-ease': easingCss } : {}) }}>
         {items.map((it, i) => (
           <button
             key={i}
@@ -90,14 +91,30 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
               spec={it.spec}
               measurer={measurer}
               className="bento-svg"
-              preserveAspectRatio="xMidYMid meet"
+              preserveAspectRatio="xMidYMid slice"
               style={{ width: '100%', height: '100%', aspectRatio: 'auto' }}
               textAnimation={animation === 'mixed' ? it.textAnimation : animation}
+              animationCss={animationCss}
               stagger={stagger}
+              showDeviceChrome={false}
             />
           </button>
         ))}
       </div>
     </div>
   )
+}
+
+function applyTextFrame(node, phase, customCss = '') {
+  const customName = customCss.trim().split(/\s+/)[0]?.replace(/^text/, '').toLowerCase()
+  const kind = customCss ? customName : ([...node.classList].find((name) => name.startsWith('text-'))?.slice(5) || 'float')
+  const angle = phase * Math.PI * 2
+  const wave = Math.sin(angle)
+  const transforms = {
+    float: `translate(0 ${wave * 14}px)`, reveal: `translate(0 ${(1 - phase) * 22}px)`, drift: `translate(${wave * 18}px 0)`,
+    pulse: `scale(${1 + wave * .04})`, rotate: `rotate(${wave * 4}deg)`, blur: `scale(${1 + wave * .025})`, wave: `translate(${wave * 12}px ${Math.cos(angle) * 8}px) skewX(${wave * 3}deg)`,
+  }
+  node.style.animation = 'none'; node.style.transform = transforms[kind] || transforms.float
+  node.style.opacity = kind === 'reveal' ? String(Math.min(1, phase * 3)) : '1'
+  node.style.filter = kind === 'blur' ? `blur(${Math.abs(wave) * 3}px)` : 'none'
 }

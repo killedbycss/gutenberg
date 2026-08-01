@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Sidebar from './components/Sidebar'
 import Preview from './components/Preview'
 import Bento from './components/Bento'
+import AnimationEditor from './components/AnimationEditor'
 import PropertiesPanel from './components/PropertiesPanel'
 import { checkHealth } from './api'
 import { loadFont, readImageAsDataUrl } from './font/fontSource'
@@ -224,6 +225,9 @@ export default function App() {
   const [bentoDistance, setBentoDistance] = useState(18)
   const [bentoStagger, setBentoStagger] = useState(90)
   const [bentoEasing, setBentoEasing] = useState('smooth')
+  const [bentoBezier, setBentoBezier] = useState([.2, .75, .2, 1])
+  const [customAnimationMode, setCustomAnimationMode] = useState(false)
+  const [customAnimationCss, setCustomAnimationCss] = useState('textFloat 9200ms cubic-bezier(.2,.75,.2,1) 0ms infinite normal both running')
 
   useEffect(() => { checkHealth().then(setHealth) }, [])
   useEffect(() => {
@@ -400,19 +404,8 @@ export default function App() {
 
       <div className="layout with-properties">
         {mode === 'bento' ? <aside className="toolbar bento-controls">
-          <div className="tool-group anim-in"><h3>Редактор анимации</h3>
-            <label className="field"><span className="field-label">Движение</span><select className="select" value={bentoAnimation} onChange={(e) => setBentoAnimation(e.target.value)}>
-              <option value="mixed">Смешанное</option><option value="float">Всплытие</option><option value="reveal">Проявление</option><option value="drift">Сдвиг</option><option value="pulse">Импульс</option><option value="rotate">Поворот</option><option value="blur">Фокус</option><option value="wave">Волна</option>
-            </select></label>
-            <label className="field"><span className="field-label">Скорость · {bentoSpeed.toFixed(1)}×</span><input type="range" min="0.5" max="2" step="0.1" value={bentoSpeed} onChange={(e) => setBentoSpeed(+e.target.value)} /></label>
-            <label className="field"><span className="field-label">Амплитуда · {bentoDistance}px</span><input type="range" min="4" max="48" value={bentoDistance} onChange={(e) => setBentoDistance(+e.target.value)} /></label>
-            <label className="field"><span className="field-label">Задержка · {bentoStagger}мс</span><input type="range" min="0" max="240" step="10" value={bentoStagger} onChange={(e) => setBentoStagger(+e.target.value)} /></label>
-            <label className="field"><span className="field-label">Характер</span><select className="select" value={bentoEasing} onChange={(e) => setBentoEasing(e.target.value)}><option value="smooth">Плавный</option><option value="spring">Пружина</option><option value="linear">Линейный</option></select></label>
-            <div className={`animation-trainer ease-${bentoEasing}`} style={{ '--bento-speed': bentoSpeed, '--bento-distance': `${bentoDistance}px` }}>
-              <div className={`trainer-square text-${bentoAnimation === 'mixed' ? 'float' : bentoAnimation}`} />
-              <code>{`animation: ${bentoAnimation === 'mixed' ? 'textFloat' : `text${bentoAnimation[0].toUpperCase()}${bentoAnimation.slice(1)}`} ${Math.round(9200 / bentoSpeed)}ms ${bentoEasing === 'linear' ? 'linear' : 'cubic-bezier(.2,.75,.2,1)'} infinite;`}</code>
-            </div>
-          </div>
+          <AnimationEditor animation={bentoAnimation} onAnimation={setBentoAnimation} speed={bentoSpeed} onSpeed={setBentoSpeed} distance={bentoDistance} onDistance={setBentoDistance} stagger={bentoStagger} onStagger={setBentoStagger} easing={bentoEasing} onEasing={setBentoEasing} bezier={bentoBezier} onBezier={setBentoBezier} customMode={customAnimationMode} onCustomMode={setCustomAnimationMode} customCss={customAnimationCss} onCustomCss={setCustomAnimationCss} />
+          <div className="tool-group anim-in"><label className="dropzone compact">Загрузить шрифт для Бенто<input type="file" hidden accept=".otf,.ttf,.woff,.woff2" onChange={(e) => { if (e.target.files[0]) onUploadFont(e.target.files[0]); e.target.value = '' }} /></label>{fontInfo && <p className="tool-desc">Активен: {fontInfo.metrics.family || fontInfo.filename}</p>}</div>
           <div className="tool-group anim-in"><button className="btn-ghost wide" onClick={() => setBentoSeed((s) => s + 1)}>↻ Новая композиция</button></div>
         </aside> : <Sidebar
           fontInfo={fontInfo}
@@ -463,10 +456,12 @@ export default function App() {
               onShuffle={() => setBentoSeed((s) => s + 1)}
               onPick={onPickBento}
               animation={bentoAnimation}
+              animationCss={customAnimationMode ? customAnimationCss : ''}
               speed={bentoSpeed}
               distance={bentoDistance}
               stagger={bentoStagger}
               easing={bentoEasing}
+              easingCss={bentoEasing === 'bezier' ? `cubic-bezier(${bentoBezier.join(',')})` : ''}
               showWcag={paletteWcag}
               colorVision={colorVision}
               fontCss={fontInfo.fontCss}
