@@ -32,3 +32,14 @@ def test_analyze_and_convert_video():
         result = mediakit.convert_media(source, "sample.mp4", target)
         assert result["ok"], result.get("error")
         assert signature in result["data"][:16]
+
+
+def test_gif_to_video_and_compression_roundtrip():
+    source_video = make_video()
+    gif = mediakit.convert_media(source_video, "sample.mp4", "gif-video", {"compression": 2})
+    assert gif["ok"], gif.get("error")
+    gif_report = mediakit.analyze_media(gif["data"], "sample.gif")
+    assert gif_report["ok"] and gif_report["media"]["width"] == 32
+    mp4 = mediakit.convert_media(gif["data"], "sample.gif", "mp4")
+    assert mp4["ok"], mp4.get("error")
+    assert b"ftyp" in mp4["data"][:16]

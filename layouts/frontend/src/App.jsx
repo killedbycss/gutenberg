@@ -106,16 +106,17 @@ function semanticPalette(colors, indexes = [0, 1, 2], enforceContrast = true) {
 // назначения подходящей пропорцией, чтобы макет заполнял ячейку без искажения.
 const BENTO_GRIDS = [
   [
-    { cols: 2, rows: 2, type: 'square' }, { cols: 1, rows: 2, type: 'tall' },
-    { cols: 1, rows: 2, type: 'tall' }, { cols: 4, rows: 1, type: 'wide' },
+    { col: 1, row: 1, cols: 2, rows: 2, type: 'square' }, { col: 3, row: 1, cols: 1, rows: 2, type: 'tall' },
+    { col: 4, row: 1, cols: 1, rows: 2, type: 'tall' }, { col: 1, row: 3, cols: 4, rows: 1, type: 'wide' },
   ],
   [
-    { cols: 3, rows: 1, type: 'wide' }, { cols: 1, rows: 2, type: 'tall' },
-    { cols: 1, rows: 1, type: 'square' }, { cols: 2, rows: 1, type: 'wide' },
+    { col: 1, row: 1, cols: 3, rows: 1, type: 'wide' }, { col: 4, row: 1, cols: 1, rows: 2, type: 'tall' },
+    { col: 1, row: 2, cols: 2, rows: 2, type: 'square' }, { col: 3, row: 2, cols: 1, rows: 1, type: 'square' },
+    { col: 3, row: 3, cols: 2, rows: 1, type: 'wide' },
   ],
   [
-    { cols: 1, rows: 2, type: 'tall' }, { cols: 2, rows: 2, type: 'square' },
-    { cols: 1, rows: 2, type: 'tall' }, { cols: 4, rows: 1, type: 'wide' },
+    { col: 1, row: 1, cols: 1, rows: 2, type: 'tall' }, { col: 2, row: 1, cols: 2, rows: 2, type: 'square' },
+    { col: 4, row: 1, cols: 1, rows: 2, type: 'tall' }, { col: 1, row: 3, cols: 4, rows: 1, type: 'wide' },
   ],
 ]
 
@@ -161,7 +162,7 @@ function buildBento(metrics, content, seed, paletteColors, enforceContrast) {
       images: content.images || [],
     }
     return {
-      cols: slot.cols, rows: slot.rows,
+      col: slot.col, row: slot.row, cols: slot.cols, rows: slot.rows,
       purposeId, purposeLabel: purpose.label, palette, paletteIndexes, variant, content: itemContent,
       textAnimation: ['float', 'reveal', 'drift', 'pulse', 'rotate', 'blur', 'wave'][Math.floor(r() * 7)],
       spec: generateLayout({ purpose, metrics, content: itemContent, variant, palette, measurer }),

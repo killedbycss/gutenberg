@@ -143,10 +143,11 @@ body {
 .compression-stats div { padding: 10px; border-radius: 9px; background: var(--surface-2); }
 .compression-stats span, .compression-controls span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 4px; }
 .compression-stats strong { font-size: 14px; font-variant-numeric: tabular-nums; }
-.compression-controls { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 10px; margin-top: 12px; align-items: end; }
-.compression-controls input[type=number] { width: 100%; padding: 8px 9px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font: 13px var(--font); }
-.quality-control input { width: 100%; accent-color: var(--primary); }
-@media (max-width: 680px) { .compression-stats, .compression-controls { grid-template-columns: 1fr; } }
+.compression-stats small { display: block; margin-top: 3px; color: var(--ok); font-size: 11px; }
+.compression-levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.compression-levels button { border: 1px solid var(--border); border-radius: 8px; padding: 8px 4px; background: var(--surface); color: var(--muted); cursor: pointer; font: 600 12px var(--font); }
+.compression-levels button.on { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); color: var(--primary); }
+@media (max-width: 680px) { .compression-stats { grid-template-columns: 1fr; } }
 .fmt-otf { --acc: var(--fmt-otf); }
 .fmt-ttf { --acc: var(--fmt-ttf); }
 .fmt-woff { --acc: var(--fmt-woff); }

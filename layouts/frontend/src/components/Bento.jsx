@@ -77,7 +77,8 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
             className={`bento-tile switch-${i % 2 ? 'a' : 'b'}`}
             style={{
               gridColumn: `span ${it.cols}`,
-              gridRow: `span ${it.rows}`,
+              gridColumnStart: it.col,
+              gridRow: `${it.row} / span ${it.rows}`,
               animationDelay: `${i * 55}ms`,
               background: it.spec.canvas.background.color,
             }}

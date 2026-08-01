@@ -291,10 +291,10 @@ body {
 .bento-sub { margin: 4px 0 0; font-size: 13px; color: var(--muted); max-width: 540px; }
 .bento-grid {
   display: grid; grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: 150px; gap: 6px; grid-auto-flow: row dense;
+  grid-template-rows: repeat(3, 150px); gap: 6px;
   overflow: hidden;
 }
-@media (max-width: 760px) { .bento-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 130px; } }
+@media (max-width: 760px) { .bento-grid { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 110px); } }
 .bento-tile {
   position: relative; overflow: hidden; padding: 0; cursor: pointer;
   border: 0; border-radius: 0; background: var(--surface-2);

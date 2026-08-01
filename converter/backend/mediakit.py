@@ -47,24 +47,26 @@ def convert_media(data: bytes, filename: str, target: str, options: dict | None 
     options = options or {}
     quality = max(1, min(100, int(options.get("quality", 82))))
     crf = str(round(36 - quality * .24))
-    width, height = options.get("width"), options.get("height")
-    scale = []
-    if width or height:
-        scale = ["-vf", f"scale={width or -2}:{height or -2}:force_original_aspect_ratio=decrease"]
+    compression = max(1, int(options.get("compression", 1)))
+    # Большинство видеокодеков с yuv420p требуют чётных размеров. Формула
+    # одновременно уменьшает кадр в N раз и не искажает его пропорции.
+    video_scale = f"scale=trunc(iw/{compression}/2)*2:trunc(ih/{compression}/2)*2:flags=lanczos"
     with tempfile.TemporaryDirectory() as directory:
         source = os.path.join(directory, f"source{suffix}")
         output = os.path.join(directory, f"result.{out_ext}")
         with open(source, "wb") as stream:
             stream.write(data)
         if target == "mp4":
-            args = ["-i", source, *scale, "-c:v", "libx264", "-crf", crf, "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac", "-movflags", "+faststart", output]
+            args = ["-i", source, "-map", "0:v:0", "-map", "0:a?", "-vf", video_scale, "-c:v", "libx264", "-crf", crf, "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac", "-movflags", "+faststart", output]
         elif target == "mov":
-            args = ["-i", source, *scale, "-c:v", "libx264", "-crf", crf, "-pix_fmt", "yuv420p", "-c:a", "aac", output]
+            args = ["-i", source, "-map", "0:v:0", "-map", "0:a?", "-vf", video_scale, "-c:v", "libx264", "-crf", crf, "-pix_fmt", "yuv420p", "-c:a", "aac", output]
         elif target == "webm-video":
-            args = ["-i", source, *scale, "-c:v", "libvpx-vp9", "-crf", crf, "-b:v", "0", "-c:a", "libopus", output]
+            args = ["-i", source, "-map", "0:v:0", "-map", "0:a?", "-vf", video_scale, "-c:v", "libvpx-vp9", "-crf", crf, "-b:v", "0", "-c:a", "libopus", output]
         else:
-            gif_width = width or 960
-            args = ["-i", source, "-vf", f"fps=12,scale='min({gif_width},iw)':-1:flags=lanczos", "-loop", "0", output]
+            gif_filter = (f"[0:v]fps=12,scale=trunc(iw/{compression}):trunc(ih/{compression}):flags=lanczos,"
+                          "split[gifsrc][palettesrc];[palettesrc]palettegen[palette];"
+                          "[gifsrc][palette]paletteuse")
+            args = ["-i", source, "-filter_complex", gif_filter, "-loop", "0", output]
         result = _run(args)
         if result.returncode or not os.path.exists(output):
             message = result.stderr.decode("utf-8", "replace").strip().splitlines()[-1:]

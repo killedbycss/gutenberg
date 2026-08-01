@@ -42,3 +42,9 @@ def test_lossless_targets_preserve_pixels():
         assert result["ok"], result.get("error")
         converted = Image.open(io.BytesIO(result["data"])).convert("RGBA")
         assert list(converted.getdata()) == list(original.getdata())
+
+
+def test_compression_level_preserves_ratio():
+    result = imagekit.convert_image(make_png(), "webp", {"compression": 2})
+    converted = Image.open(io.BytesIO(result["data"]))
+    assert converted.size == (32, 24)
