@@ -16,7 +16,7 @@ const CONTENT_PLACEHOLDER = {
 }
 
 export default function Sidebar({
-  fontInfo, loadingFont, fontError, onUploadFont,
+  fontInfo, loadingFont, fontError, onUploadFont, logoName, logoError, onUploadLogo,
   purposeId, onPurpose, variant, onVariant,
   paletteColors, paletteLocked, paletteSelected, onPaletteColor,
   onTogglePaletteLock, onTogglePaletteColor, onRandomPalette,
@@ -37,7 +37,7 @@ export default function Sidebar({
   return (
     <aside className="toolbar">
       {/* --- Шрифт --- */}
-      <FontPanel fontInfo={fontInfo} loadingFont={loadingFont} fontError={fontError} onUploadFont={onUploadFont} />
+      <FontPanel fontInfo={fontInfo} loadingFont={loadingFont} fontError={fontError} onUploadFont={onUploadFont} logoName={logoName} logoError={logoError} onUploadLogo={onUploadLogo} />
 
       {/* --- Назначение --- */}
       <div className="tool-group anim-in">
@@ -159,10 +159,11 @@ export default function Sidebar({
   )
 }
 
-export function FontPanel({ fontInfo, loadingFont, fontError, onUploadFont }) {
+export function FontPanel({ fontInfo, loadingFont, fontError, onUploadFont, logoName, logoError, onUploadLogo }) {
   const fontInput = useRef(null)
+  const logoInput = useRef(null)
   return <div className="tool-group anim-in">
-    <h3>Шрифт</h3>
+    <h3>Загрузите шрифт</h3>
     <div className={`dropzone compact${loadingFont ? ' disabled' : ''}`} onClick={() => fontInput.current?.click()}>
       <div className="dropzone-title">{loadingFont ? 'Читаю шрифт…' : fontInfo && !fontInfo.isSystem ? fontInfo.fileName : 'Загрузите шрифт'}</div>
       <div className="dropzone-hint">OTF · TTF · WOFF · WOFF2</div>
@@ -171,7 +172,10 @@ export function FontPanel({ fontInfo, loadingFont, fontError, onUploadFont }) {
       if (e.target.files[0]) onUploadFont(e.target.files[0])
       e.target.value = ''
     }} />
+    <button className="logo-upload-button" onClick={() => logoInput.current?.click()}>{logoName ? `SVG · ${logoName}` : '+ Добавить SVG-логотип'}</button>
+    <input ref={logoInput} type="file" hidden accept="image/svg+xml,.svg" onChange={(event) => { if (event.target.files[0]) onUploadLogo?.(event.target.files[0]); event.target.value = '' }} />
     {fontError && <p className="tool-warn">{fontError}</p>}
+    {logoError && <p className="tool-warn">{logoError}</p>}
     {fontInfo && !fontInfo.isSystem && <div className="metrics">
       <div className="metrics-name">{fontInfo.metrics.family || 'Без имени'}</div>
       <dl className="metrics-grid"><dt>UPM</dt><dd>{fontInfo.metrics.unitsPerEm}</dd><dt>cap-height</dt><dd>{fontInfo.metrics.capHeight}</dd><dt>x-height</dt><dd>{fontInfo.metrics.xHeight}</dd></dl>

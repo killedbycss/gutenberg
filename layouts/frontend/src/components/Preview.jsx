@@ -26,6 +26,8 @@ export default function Preview({
   const selFrame = spec.frames.find((f) => f.id === selectedId)
   const coordFontSize = Math.max(34, Math.min(54, Math.min(W, H) * .032))
   const coordHeight = coordFontSize * 1.75
+  const coordLabel = selFrame ? `x ${Math.round(selFrame.box.x * 100)}%  y ${Math.round(selFrame.box.y * 100)}%  ·  ${Math.round(selFrame.box.w * 100)}×${Math.round(selFrame.box.h * 100)}%` : ''
+  const coordWidth = Math.min(W * .72, coordLabel.length * coordFontSize * .58 + coordFontSize * 1.1)
 
   function startDrag(e, frame) {
     e.stopPropagation()
@@ -93,8 +95,8 @@ export default function Preview({
 
           {selFrame && !selFrame.hidden && <g pointerEvents="none">
             <rect className="frame-sel" fill="none" x={selFrame.box.x * W} y={selFrame.box.y * H} width={selFrame.box.w * W} height={selFrame.box.h * H} />
-            <rect className="frame-coord-bg" x={selFrame.box.x * W} y={Math.max(2, selFrame.box.y * H - coordHeight - 8)} width={Math.min(W * .58, Math.max(coordFontSize * 22, selFrame.box.w * W))} height={coordHeight} rx={coordFontSize * .32} />
-            <text className="frame-coord-label" fontSize={coordFontSize} x={selFrame.box.x * W + coordFontSize * .55} y={Math.max(coordFontSize * 1.18, selFrame.box.y * H - coordFontSize * .48)}>{`x ${Math.round(selFrame.box.x * 100)}%  y ${Math.round(selFrame.box.y * 100)}%  ·  ${Math.round(selFrame.box.w * 100)}×${Math.round(selFrame.box.h * 100)}%`}</text>
+            <rect className="frame-coord-bg" x={selFrame.box.x * W} y={Math.max(2, selFrame.box.y * H - coordHeight - 8)} width={coordWidth} height={coordHeight} rx={coordFontSize * .32} />
+            <text className="frame-coord-label" fontSize={coordFontSize} x={selFrame.box.x * W + coordFontSize * .55} y={Math.max(coordFontSize * 1.18, selFrame.box.y * H - coordFontSize * .48)}>{coordLabel}</text>
           </g>}
         </svg>
       </div>

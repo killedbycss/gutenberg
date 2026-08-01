@@ -206,6 +206,9 @@ export default function App() {
   const [fontInfo, setFontInfo] = useState(SYSTEM_FONT_INFO)
   const [loadingFont, setLoadingFont] = useState(false)
   const [fontError, setFontError] = useState(null)
+  const [logoSvg, setLogoSvg] = useState('')
+  const [logoName, setLogoName] = useState('')
+  const [logoError, setLogoError] = useState(null)
 
   const [mode, setMode] = useState(() => new URLSearchParams(window.location.search).get('mode') === 'bento' ? 'bento' : 'editor')
   const [purposeId, setPurposeId] = useState(PURPOSES[0].id)
@@ -300,6 +303,24 @@ export default function App() {
       setFontError(e.message)
     } finally {
       setLoadingFont(false)
+    }
+  }
+
+  async function onUploadLogo(file) {
+    setLogoError(null)
+    try {
+      const source = await file.text()
+      const doc = new DOMParser().parseFromString(source, 'image/svg+xml')
+      const svg = doc.documentElement
+      if (svg.nodeName.toLowerCase() !== 'svg' || doc.querySelector('parsererror')) throw new Error('Файл не является корректным SVG')
+      doc.querySelectorAll('script, foreignObject, iframe, object, embed').forEach((node) => node.remove())
+      doc.querySelectorAll('*').forEach((node) => [...node.attributes].forEach((attribute) => { if (/^on/i.test(attribute.name)) node.removeAttribute(attribute.name) }))
+      const clean = new XMLSerializer().serializeToString(svg)
+      const src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(clean)}`
+      setLogoSvg(clean); setLogoName(file.name)
+      setContent((current) => ({ ...current, images: [...(current.images || []).filter((item) => item.id !== 'brand-logo'), { id: 'brand-logo', name: file.name, src }] }))
+    } catch (error) {
+      setLogoError(error.message || 'Не удалось прочитать SVG')
     }
   }
 
@@ -447,13 +468,16 @@ export default function App() {
       <div className={`layout with-properties mobile-panel-${mobilePanel}`}>
         {mode === 'bento' ? <aside className="toolbar bento-controls mobile-left-panel">
           <AnimationEditor animation={bentoAnimation} onAnimation={setBentoAnimation} speed={bentoSpeed} onSpeed={setBentoSpeed} distance={bentoDistance} onDistance={setBentoDistance} stagger={bentoStagger} onStagger={setBentoStagger} easing={bentoEasing} onEasing={setBentoEasing} customMode={customAnimationMode} onCustomMode={setCustomAnimationMode} customCss={customAnimationCss} onCustomCss={setCustomAnimationCss} />
-          <FontPanel fontInfo={fontInfo} loadingFont={loadingFont} fontError={fontError} onUploadFont={onUploadFont} />
+          <FontPanel fontInfo={fontInfo} loadingFont={loadingFont} fontError={fontError} onUploadFont={onUploadFont} logoName={logoName} logoError={logoError} onUploadLogo={onUploadLogo} />
           <div className="tool-group anim-in"><button className="btn-ghost wide" onClick={() => setBentoSeed((s) => s + 1)}>↻ Новая композиция</button></div>
         </aside> : <div className="mobile-left-panel"><Sidebar
           fontInfo={fontInfo}
           loadingFont={loadingFont}
           fontError={fontError}
           onUploadFont={onUploadFont}
+          logoName={logoName}
+          logoError={logoError}
+          onUploadLogo={onUploadLogo}
           purposeId={purposeId}
           onPurpose={onPurpose}
           variant={variant}
@@ -508,6 +532,8 @@ export default function App() {
               showWcag={paletteWcag}
               colorVision={colorVision}
               fontCss={fontInfo.fontCss}
+              logoSvg={logoSvg}
+              logoColors={paletteColors}
             />
           ) : (
             <Preview

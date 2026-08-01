@@ -123,6 +123,7 @@ body {
 .dropzone.disabled { opacity: .55; pointer-events: none; }
 .dropzone-title { font-weight: 600; }
 .dropzone-hint { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+.logo-upload-button { width: 100%; margin-top: 7px; padding: 8px 10px; overflow: hidden; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); color: var(--text); cursor: pointer; font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
 
 .metrics { margin-top: 12px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: var(--surface-2); }
 .metrics-name { font-weight: 600; font-size: 13px; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -257,8 +258,8 @@ body {
 
 /* Оверлеи в системе координат холста — обводки постоянной толщины. */
 .frame-sel { stroke: var(--primary); stroke-width: 2; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; }
-.frame-coord-bg { fill: color-mix(in srgb, var(--surface) 94%, transparent); stroke: var(--border); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.frame-coord-label { fill: var(--text); font-family: var(--font); font-weight: 600; letter-spacing: .01em; }
+.frame-coord-bg { fill: color-mix(in srgb, var(--text) 94%, transparent); stroke: color-mix(in srgb, var(--surface) 70%, transparent); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.frame-coord-label { fill: var(--surface); font-family: var(--font); font-weight: 650; letter-spacing: .01em; }
 .frame-ph {
   fill: color-mix(in srgb, var(--primary) 7%, transparent);
   stroke: color-mix(in srgb, var(--primary) 45%, transparent);
@@ -316,6 +317,9 @@ body {
   grid-template-rows: repeat(3, 1fr); gap: 0; aspect-ratio: 16 / 9;
   overflow: hidden;
 }
+.bento-grid.logo-bento-grid { width: min(100%, 760px); grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); aspect-ratio: 1; }
+.logo-svg-wrap { display: grid; width: 62%; height: 62%; place-items: center; pointer-events: none; }
+.logo-svg-wrap svg { width: 100%; height: 100%; overflow: visible; }
 .bento-tile {
   position: relative; overflow: hidden; padding: 0; cursor: pointer;
   border: 0; border-radius: 0; background: var(--surface-2);
@@ -410,10 +414,11 @@ body {
 /* ---------- Правая панель свойств ---------- */
 .properties-panel { position: sticky; top: 0; min-height: 100vh; max-height: 100vh; overflow-y: auto; border-left: 1px solid var(--border); margin-right: -20px; padding: 16px 20px 16px 16px; background: var(--surface); }
 .properties-panel h3 { margin: 0 0 14px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
-.properties-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 8px; }
-.property-field > span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 4px; }
-.property-field > div { display: flex; align-items: center; border: 1px solid var(--border); background: var(--bg); }
-.property-field input { width: 100%; min-width: 0; border: 0; padding: 7px 8px; background: none; color: var(--text); font: 12px var(--mono); }
+.properties-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 9px 7px; }
+.property-field { flex: 0 0 auto; width: max-content; }
+.property-field > span { display: block; color: var(--text); font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+.property-field > div { display: flex; width: max-content; align-items: center; overflow: hidden; border: 1px solid color-mix(in srgb, var(--text) 28%, var(--border)); border-radius: 7px; background: var(--surface-2); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 72%, transparent); }
+.property-field input { width: 58px; min-width: 58px; border: 0; padding: 7px 5px 7px 8px; background: none; color: var(--text); font: 600 12px var(--mono); }
 .property-field input:focus { outline: none; }
 .property-field em { padding-right: 8px; color: var(--muted); font-size: 11px; font-style: normal; }
 .properties-empty { color: var(--muted); font-size: 12px; }

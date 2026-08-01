@@ -114,6 +114,104 @@ async function convertFont(file, target) {
   return new Blob([font.write({ type: target, hinting: true, kerning: true })], { type: `font/${target}` })
 }
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+function loadVideo(file) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video'); const url = URL.createObjectURL(file)
+    video.muted = true; video.playsInline = true; video.preload = 'auto'
+    video.onloadedmetadata = () => resolve({ video, url }); video.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Браузер не смог открыть видео')) }; video.src = url
+  })
+}
+function seekVideo(video, time) { return new Promise((resolve, reject) => { video.onseeked = resolve; video.onerror = reject; video.currentTime = Math.min(time, Math.max(0, video.duration - .001)) }) }
+
+async function videoToGif(file, options) {
+  const { GIFEncoder, quantize, applyPalette } = await import('./vendor/gifenc.js')
+  const { video, url } = await loadVideo(file)
+  try {
+    const compression = Math.max(1, +options.compression || 1); const fps = 12
+    const width = Math.max(1, Math.round(video.videoWidth / compression)); const height = Math.max(1, Math.round(video.videoHeight / compression))
+    const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); const encoder = GIFEncoder()
+    const frames = Math.max(1, Math.ceil(video.duration * fps))
+    for (let index = 0; index < frames; index += 1) {
+      await seekVideo(video, index / fps); ctx.drawImage(video, 0, 0, width, height)
+      const rgba = ctx.getImageData(0, 0, width, height); const palette = quantize(rgba.data, 256); const indexed = applyPalette(rgba.data, palette)
+      encoder.writeFrame(indexed, width, height, { palette, delay: Math.round(1000 / fps), repeat: 0 })
+    }
+    encoder.finish(); return new Blob([encoder.bytes()], { type: 'image/gif' })
+  } finally { URL.revokeObjectURL(url) }
+}
+
+function mediaMime(target) {
+  const candidates = target === 'webm-video' ? ['video/webm;codecs=vp9', 'video/webm']
+    : target === 'mov' ? ['video/mp4;codecs=avc1.42E01E', 'video/mp4']
+      : ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9']
+  return candidates.find((mime) => MediaRecorder.isTypeSupported(mime)) || ''
+}
+async function recordCanvas(canvas, drawFrames, target) {
+  if (!window.MediaRecorder || !canvas.captureStream) throw new Error('Запись видео не поддерживается этим браузером')
+  const mimeType = mediaMime(target); if (!mimeType) throw new Error('Выбранный видеоформат не поддерживается браузером')
+  const chunks = []; const recorder = new MediaRecorder(canvas.captureStream(30), { mimeType, videoBitsPerSecond: 8_000_000 })
+  recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data) }
+  const done = new Promise((resolve, reject) => { recorder.onstop = resolve; recorder.onerror = () => reject(recorder.error || new Error('Ошибка записи видео')) })
+  recorder.start(); await drawFrames(); recorder.stop(); await done
+  return new Blob(chunks, { type: mimeType })
+}
+async function gifToVideo(file, target, options) {
+  if (!window.ImageDecoder) return gifToVideoFallback(file, target, options)
+  const decoder = new ImageDecoder({ data: await file.arrayBuffer(), type: 'image/gif' }); await decoder.tracks.ready
+  const track = decoder.tracks.selectedTrack; const compression = Math.max(1, +options.compression || 1)
+  const first = await decoder.decode({ frameIndex: 0 }); const width = Math.max(2, Math.round(first.image.displayWidth / compression / 2) * 2); const height = Math.max(2, Math.round(first.image.displayHeight / compression / 2) * 2)
+  const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d')
+  first.image.close()
+  return recordCanvas(canvas, async () => {
+    for (let index = 0; index < track.frameCount; index += 1) {
+      const { image } = await decoder.decode({ frameIndex: index }); ctx.drawImage(image, 0, 0, width, height); const duration = Math.max(20, (image.duration || 100000) / 1000); image.close(); await wait(duration)
+    }
+  }, target)
+}
+function gifDuration(buffer) {
+  const bytes = new Uint8Array(buffer); const view = new DataView(buffer); let offset = 13; let duration = 0
+  if (bytes[10] & 0x80) offset += 3 * (2 ** ((bytes[10] & 7) + 1))
+  const skipBlocks = () => { while (offset < bytes.length) { const size = bytes[offset++]; if (!size) break; offset += size } }
+  while (offset < bytes.length) {
+    const marker = bytes[offset++]
+    if (marker === 0x3b) break
+    if (marker === 0x21) {
+      const label = bytes[offset++]
+      if (label === 0xf9 && bytes[offset] === 4) { duration += Math.max(2, view.getUint16(offset + 2, true)) * 10; offset += 6 } else skipBlocks()
+    } else if (marker === 0x2c) {
+      const packed = bytes[offset + 8]; offset += 9
+      if (packed & 0x80) offset += 3 * (2 ** ((packed & 7) + 1))
+      offset += 1; skipBlocks()
+    } else break
+  }
+  return Math.max(1000, duration || 3000)
+}
+async function gifToVideoFallback(file, target, options) {
+  const buffer = await file.arrayBuffer(); const duration = gifDuration(buffer); const url = URL.createObjectURL(file)
+  try {
+    const image = await new Promise((resolve, reject) => { const value = new Image(); value.onload = () => resolve(value); value.onerror = reject; value.src = url })
+    const compression = Math.max(1, +options.compression || 1); const width = Math.max(2, Math.round(image.naturalWidth / compression / 2) * 2); const height = Math.max(2, Math.round(image.naturalHeight / compression / 2) * 2)
+    const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d')
+    return await recordCanvas(canvas, async () => { const started = performance.now(); while (performance.now() - started < duration) { ctx.drawImage(image, 0, 0, width, height); await new Promise(requestAnimationFrame) } }, target)
+  } finally { URL.revokeObjectURL(url) }
+}
+async function videoToVideo(file, target, options) {
+  const { video, url } = await loadVideo(file)
+  try {
+    const compression = Math.max(1, +options.compression || 1); const width = Math.max(2, Math.round(video.videoWidth / compression / 2) * 2); const height = Math.max(2, Math.round(video.videoHeight / compression / 2) * 2)
+    const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d')
+    return await recordCanvas(canvas, async () => {
+      await video.play(); await new Promise((resolve) => { const draw = () => { ctx.drawImage(video, 0, 0, width, height); if (video.ended) resolve(); else requestAnimationFrame(draw) }; draw() })
+    }, target)
+  } finally { URL.revokeObjectURL(url) }
+}
+async function convertMedia(file, target, options) {
+  const sourceGif = ext(file.name) === 'gif' || file.type === 'image/gif'
+  if (target === 'gif-video') return sourceGif && (+options.compression || 1) === 1 ? file : videoToGif(file, options)
+  return sourceGif ? gifToVideo(file, target, options) : videoToVideo(file, target, options)
+}
+
 export async function convertFonts(files, selectedTargets, preset = 'basic', options = {}) {
   if (!BROWSER_ONLY) {
     const form = new FormData(); files.forEach((file) => form.append('fonts', file, file.name)); selectedTargets.forEach((target) => form.append('targets', target)); form.append('preset', preset)
@@ -123,10 +221,11 @@ export async function convertFonts(files, selectedTargets, preset = 'basic', opt
   }
   const outputs = []
   for (const file of files) for (const target of selectedTargets) {
-    if (isVideo(file)) continue
-    if (isImage(file) !== ['ico', 'jpg', 'webp', 'png-lossless'].includes(target)) continue
-    const blob = isImage(file) ? await convertImage(file, target, options) : await convertFont(file, target)
-    const suffix = target === 'png-lossless' ? 'png' : target
+    const mediaTarget = ['mp4', 'mov', 'webm-video', 'gif-video'].includes(target)
+    if (isVideo(file) !== mediaTarget && !(isImage(file) && !mediaTarget)) continue
+    if (isImage(file) && !['ico', 'jpg', 'webp', 'png-lossless'].includes(target)) continue
+    const blob = isVideo(file) ? await convertMedia(file, target, options) : isImage(file) ? await convertImage(file, target, options) : await convertFont(file, target)
+    const suffix = target === 'png-lossless' ? 'png' : target === 'webm-video' ? 'webm' : target === 'gif-video' ? 'gif' : target
     outputs.push({ blob, filename: `${stem(file.name)}.${suffix}` })
   }
   if (!outputs.length) throw new Error('Нет совместимых сочетаний файлов и форматов')

@@ -50,7 +50,7 @@ export const PURPOSES = [
     palette: 'mono',
     scale: { headlineCap: 0.11, ratio: 1.35, marginX: 0.08, marginY: 0.10, minBody: 0.030 },
   },
-  { id: 'mobile-portrait', label: 'Смартфон — экран', group: 'Цифровые устройства', width: 1179, height: 2556, unit: 'px', dpi: 72, palette: 'ink', safe: { x:.045,y:.035,w:.91,h:.93 }, scale: { headlineCap:.105,ratio:1.5,marginX:.075,marginY:.065,minBody:.016 } },
+  { id: 'mobile-portrait', label: 'Смартфон — экран', group: 'Цифровые устройства', width: 1179, height: 2556, unit: 'px', dpi: 72, palette: 'ink', safe: { x:.045,y:.075,w:.91,h:.89 }, scale: { headlineCap:.105,ratio:1.5,marginX:.075,marginY:.105,minBody:.016 } },
   { id: 'tablet-portrait', label: 'Планшет — портрет', group: 'Цифровые устройства', width: 1640, height: 2360, unit: 'px', dpi: 72, palette: 'ocean', safe: { x:.035,y:.03,w:.93,h:.94 }, scale: { headlineCap:.10,ratio:1.48,marginX:.07,marginY:.06,minBody:.015 } },
   { id: 'desktop-hd', label: 'Десктоп — 16:9', group: 'Цифровые устройства', width: 1920, height: 1080, unit: 'px', dpi: 72, palette: 'mono', safe: { x:.025,y:.09,w:.95,h:.865 }, scale: { headlineCap:.14,ratio:1.5,marginX:.055,marginY:.12,minBody:.025 } },
   { id: 'book-a5', label: 'Книга A5 — страница', group: 'Книги', width: 1748, height: 2480, unit: 'px', dpi: 300, palette: 'paper', safe: { x:.08,y:.07,w:.84,h:.86 }, scale: { headlineCap:.075,ratio:1.42,marginX:.09,marginY:.075,minBody:.012 } },

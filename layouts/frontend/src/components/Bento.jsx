@@ -2,9 +2,8 @@ import React, { useMemo, useRef, useState } from 'react'
 import SpecSvg from './SpecSvg'
 import { makeMeasurer } from '../render/textLayout'
 import { RENDER_FONT_FAMILY } from '../layout/schema'
-import { GIFEncoder, quantize, applyPalette } from 'gifenc'
 
-export default function Bento({ items, fontReady, seed, onShuffle, onPick, animation = 'mixed', animationCss = '', speed = 1, distance = 18, stagger = 90, easing = 'smooth', easingCss = '', showWcag = true, colorVision = 'normal', fontCss = '' }) {
+export default function Bento({ items, fontReady, seed, onShuffle, onPick, animation = 'mixed', animationCss = '', speed = 1, distance = 18, stagger = 90, easing = 'smooth', easingCss = '', showWcag = true, colorVision = 'normal', fontCss = '', logoSvg = '', logoColors = [] }) {
   const measurer = useMemo(() => makeMeasurer(RENDER_FONT_FAMILY), [fontReady])
   const gridRef = useRef(null)
   const [exporting, setExporting] = useState(false)
@@ -61,23 +60,23 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
     const animations = gridRef.current ? gridRef.current.getAnimations({ subtree: true }) : []
     const states = animations.map((item) => ({ item, currentTime: item.currentTime, playState: item.playState }))
     try {
+      const { GIFEncoder, quantize, applyPalette } = await import('gifenc')
       animations.forEach((item) => item.pause())
       const durations = animations.map((item) => Number(item.effect?.getTiming().duration) || 0).filter(Number.isFinite)
       const duration = Math.max(3200, Math.min(12000, durations.length ? Math.max(...durations) : 9200))
       animations.forEach((item) => { item.currentTime = 0 })
       const first = await renderComposition(0); if (!first) return
       const width = first.width; const height = first.height
-      const frame = document.createElement('canvas'); frame.width = width; frame.height = height
-      const ctx = frame.getContext('2d'); const encoder = GIFEncoder()
+      animations.forEach((item) => { item.currentTime = duration * .5 })
+      const paletteCanvas = await renderComposition(duration * .5); const paletteData = paletteCanvas.getContext('2d').getImageData(0, 0, width, height)
+      const palette = quantize(paletteData.data, 256); const encoder = GIFEncoder()
       const frames = Math.max(60, Math.min(120, Math.round(duration / 90)))
       const delay = Math.round(duration / frames)
       for (let i = 0; i < frames; i += 1) {
         const time = i * duration / frames
         animations.forEach((item) => { item.currentTime = time })
         const source = i === 0 ? first : await renderComposition(time)
-        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#fff'; ctx.fillRect(0, 0, width, height)
-        ctx.drawImage(source, 0, 0, width, height)
-        const rgba = ctx.getImageData(0, 0, width, height); const palette = quantize(rgba.data, 256); const indexed = applyPalette(rgba.data, palette)
+        const rgba = source.getContext('2d').getImageData(0, 0, width, height); const indexed = applyPalette(rgba.data, palette)
         encoder.writeFrame(indexed, width, height, { palette, delay, repeat: 0 })
       }
       encoder.finish(); const blob = new Blob([encoder.bytes()], { type: 'image/gif' }); const url = URL.createObjectURL(blob)
@@ -103,8 +102,14 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
       </div>
 
       {/* key={seed} перезапускает анимацию «переключения» при каждом перемешивании */}
-      <div className={`bento-grid ease-${easing}`} key={seed} ref={gridRef} style={{ '--bento-speed': speed, '--bento-distance': `${distance}px`, ...(easingCss ? { '--bento-ease': easingCss } : {}) }}>
-        {items.map((it, i) => (
+      <div className={`bento-grid ease-${easing}${logoSvg ? ' logo-bento-grid' : ''}`} key={`${seed}-${logoSvg ? 'logo' : 'type'}`} ref={gridRef} style={{ '--bento-speed': speed, '--bento-distance': `${distance}px`, ...(easingCss ? { '--bento-ease': easingCss } : {}) }}>
+        {logoSvg ? Array.from({ length: 4 }, (_, i) => {
+          const color = logoColors[i % Math.max(1, logoColors.length)] || '#111111'
+          const background = logoColors[(i + 2) % Math.max(1, logoColors.length)] || '#ffffff'
+          return <button key={i} className={`bento-tile logo-bento-tile switch-${i % 2 ? 'a' : 'b'}`} style={{ gridColumn: `${i % 2 + 1}`, gridRow: `${Math.floor(i / 2) + 1}`, animationDelay: `${i * 55}ms`, background }} title="SVG-логотип из палитры">
+            <span className="logo-svg-wrap" dangerouslySetInnerHTML={{ __html: colorizeSvg(logoSvg, color) }} />
+          </button>
+        }) : items.map((it, i) => (
           <button
             key={i}
             className={`bento-tile switch-${i % 2 ? 'a' : 'b'}`}
@@ -135,6 +140,16 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
       </div>
     </div>
   )
+}
+
+function colorizeSvg(source, color) {
+  const doc = new DOMParser().parseFromString(source, 'image/svg+xml'); const svg = doc.documentElement
+  svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%'); svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
+  svg.querySelectorAll('path, rect, circle, ellipse, polygon, polyline, line, text').forEach((node) => {
+    if (node.getAttribute('fill') !== 'none') { node.setAttribute('fill', color); node.style.fill = color }
+    if (node.hasAttribute('stroke') && node.getAttribute('stroke') !== 'none') { node.setAttribute('stroke', color); node.style.stroke = color }
+  })
+  return new XMLSerializer().serializeToString(svg)
 }
 
 function applyTileTransform(ctx, transform, x, y, width, height) {
