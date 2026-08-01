@@ -4,7 +4,7 @@ import { RENDER_FONT_FAMILY } from '../layout/schema'
 
 // Статический (не интерактивный) рендер LayoutSpec в SVG. Тот же расчёт, что и
 // в превью/экспорте (specToDrawOps). Используется в плитках бенто.
-export default function SpecSvg({ spec, measurer, placeholders = false, className, style, preserveAspectRatio = 'xMidYMid meet', textAnimation = '', stagger = 90, animationCss = '', showDeviceChrome = true }) {
+export default function SpecSvg({ spec, measurer, placeholders = false, className, style, preserveAspectRatio = 'xMidYMid meet', viewBoxOverride = null, textAnimation = '', stagger = 90, animationCss = '', showDeviceChrome = true }) {
   const draw = useMemo(
     () => (spec ? specToDrawOps(spec, measurer, { placeholders }) : null),
     [spec, measurer, placeholders],
@@ -12,11 +12,12 @@ export default function SpecSvg({ spec, measurer, placeholders = false, classNam
   if (!draw) return null
   const W = draw.width
   const H = draw.height
+  const view = viewBoxOverride || { x: 0, y: 0, w: W, h: H }
   return (
     <svg
       className={className}
-      viewBox={`0 0 ${W} ${H}`}
-      style={{ aspectRatio: `${W} / ${H}`, display: 'block', ...style }}
+      viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
+      style={{ aspectRatio: `${view.w} / ${view.h}`, display: 'block', ...style }}
       preserveAspectRatio={preserveAspectRatio}
     >
       {draw.ops.map((op, i) => renderOp(op, i, textAnimation, stagger, animationCss))}
@@ -25,7 +26,7 @@ export default function SpecSvg({ spec, measurer, placeholders = false, classNam
   )
 }
 
-function DeviceChrome({ purpose, width, height, background }) {
+export function DeviceChrome({ purpose, width, height, background }) {
   const ink = isDark(background) ? '#fff' : '#111'
   const faint = isDark(background) ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.15)'
   if (purpose === 'mobile-portrait') return <g aria-label="Интерфейс смартфона">
@@ -51,6 +52,10 @@ function DeviceChrome({ purpose, width, height, background }) {
     <text x={width * .05} y={height * .026} fill={ink} opacity=".7" fontFamily="serif" fontSize={height * .01}>09:41</text>
     <text x={width * .95} y={height * .026} textAnchor="end" fill={ink} opacity=".7" fontFamily="sans-serif" fontSize={height * .01}>82%</text>
     <line x1={width * .05} y1={height * .955} x2={width * .95} y2={height * .955} stroke={ink} strokeOpacity=".22" />
+  </g>
+  if (purpose === 'book-a5' || purpose === 'book-145x215') return <g aria-label="Элементы книжной страницы">
+    <line x1={width * .08} y1={height * .94} x2={width * .92} y2={height * .94} stroke={ink} strokeOpacity=".18" />
+    <text x={width * .5} y={height * .965} textAnchor="middle" fill={ink} opacity=".65" fontFamily="serif" fontSize={height * .009}>— 24 —</text>
   </g>
   return null
 }

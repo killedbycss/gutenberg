@@ -19,7 +19,7 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
         const svg = tile.querySelector('svg'); if (!svg) continue
         const rect = tile.getBoundingClientRect(); const copy = svg.cloneNode(true)
         copy.setAttribute('width', String(rect.width)); copy.setAttribute('height', String(rect.height)); copy.setAttribute('preserveAspectRatio', 'xMidYMid slice')
-        if (phase != null) copy.querySelectorAll('.bento-text').forEach((text) => applyTextFrame(text, phase, animationCss))
+        if (phase != null) copy.querySelectorAll('.bento-text').forEach((text, index) => applyTextFrame(text, (phase + index * Math.max(.025, stagger / 4000)) % 1, animationCss))
         if (fontCss) { const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs'); const style = document.createElementNS('http://www.w3.org/2000/svg', 'style'); style.textContent = fontCss; defs.appendChild(style); copy.prepend(defs) }
         const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml' }))
         const image = await new Promise((resolve, reject) => { const value = new Image(); value.onload = () => resolve(value); value.onerror = reject; value.src = url })
@@ -92,6 +92,7 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
               measurer={measurer}
               className="bento-svg"
               preserveAspectRatio="xMidYMid slice"
+              viewBoxOverride={it.viewBox}
               style={{ width: '100%', height: '100%', aspectRatio: 'auto' }}
               textAnimation={animation === 'mixed' ? it.textAnimation : animation}
               animationCss={animationCss}

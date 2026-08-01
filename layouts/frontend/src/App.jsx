@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import Sidebar from './components/Sidebar'
+import Sidebar, { FontPanel } from './components/Sidebar'
 import Preview from './components/Preview'
 import Bento from './components/Bento'
 import AnimationEditor from './components/AnimationEditor'
@@ -147,28 +147,24 @@ function buildBento(metrics, content, seed, paletteColors, enforceContrast) {
   const measurer = makeMeasurer(RENDER_FONT_FAMILY)
   const r = mulberry32(seed * 7 + 3)
   const slots = BENTO_GRIDS[Math.floor(r() * BENTO_GRIDS.length)]
-  return slots.map((slot, index) => {
-    const candidates = PURPOSES_BY_SHAPE[slot.type]
-    const purposeId = candidates[Math.floor(r() * candidates.length)]
-    const purpose = purposeById(purposeId)
-    const count = paletteColors.length
-    const paletteIndexes = [index % count, (index + 1) % count, (index + 2) % count]
-    const palette = semanticPalette(paletteColors, paletteIndexes, enforceContrast)
-    const variant = VARIANT_OPTIONS[Math.floor(r() * VARIANT_OPTIONS.length)].id
-    const copy = metrics.hasCyrillic === false ? BENTO_COPY_EN : BENTO_COPY
-    const sample = copy[(Math.floor(r() * copy.length) + index) % copy.length]
-    const itemContent = {
-      ...content,
-      ...sample,
-      images: content.images || [],
-    }
-    return {
-      col: slot.col, row: slot.row, cols: slot.cols, rows: slot.rows,
-      purposeId, purposeLabel: purpose.label, palette, paletteIndexes, variant, content: itemContent,
-      textAnimation: ['float', 'reveal', 'drift', 'pulse', 'rotate', 'blur', 'wave'][Math.floor(r() * 7)],
-      spec: generateLayout({ purpose, metrics, content: itemContent, variant, palette, measurer }),
-    }
-  })
+  const purpose = purposeById('desktop-hd')
+  const count = paletteColors.length
+  const paletteIndexes = [0, Math.min(1, count - 1), Math.min(2, count - 1)]
+  const palette = semanticPalette(paletteColors, paletteIndexes, enforceContrast)
+  const variant = VARIANT_OPTIONS[Math.floor(r() * VARIANT_OPTIONS.length)].id
+  const copy = metrics.hasCyrillic === false ? BENTO_COPY_EN : BENTO_COPY
+  const sample = copy[Math.floor(r() * copy.length)]
+  const itemContent = { ...content, ...sample, images: content.images || [] }
+  const spec = generateLayout({ purpose, metrics, content: itemContent, variant, palette, measurer })
+  const cellW = spec.canvas.width / 4
+  const cellH = spec.canvas.height / 3
+  return slots.map((slot) => ({
+    col: slot.col, row: slot.row, cols: slot.cols, rows: slot.rows,
+    purposeId: purpose.id, purposeLabel: purpose.label, palette, paletteIndexes, variant, content: itemContent,
+    textAnimation: ['float', 'reveal', 'drift', 'pulse', 'rotate', 'blur', 'wave'][Math.floor(r() * 7)],
+    spec,
+    viewBox: { x: (slot.col - 1) * cellW, y: (slot.row - 1) * cellH, w: slot.cols * cellW, h: slot.rows * cellH },
+  }))
 }
 
 // Наложить ручные правки (overrides) поверх сгенерированного макета.
@@ -245,6 +241,9 @@ export default function App() {
     const base = generateLayout({
       purpose, metrics: fontInfo.metrics, content, variant, palette: paletteValue, measurer,
     })
+    if (purpose.group === 'Книги' || purpose.group === 'Цифровые устройства') {
+      base.canvas.background.color = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#ffffff'
+    }
     return applyOverrides(base, overrides, bgColor)
   }, [fontInfo, purpose, content, variant, paletteValue, overrides, bgColor])
 
@@ -405,7 +404,7 @@ export default function App() {
       <div className="layout with-properties">
         {mode === 'bento' ? <aside className="toolbar bento-controls">
           <AnimationEditor animation={bentoAnimation} onAnimation={setBentoAnimation} speed={bentoSpeed} onSpeed={setBentoSpeed} distance={bentoDistance} onDistance={setBentoDistance} stagger={bentoStagger} onStagger={setBentoStagger} easing={bentoEasing} onEasing={setBentoEasing} bezier={bentoBezier} onBezier={setBentoBezier} customMode={customAnimationMode} onCustomMode={setCustomAnimationMode} customCss={customAnimationCss} onCustomCss={setCustomAnimationCss} />
-          <div className="tool-group anim-in"><label className="dropzone compact">Загрузить шрифт для Бенто<input type="file" hidden accept=".otf,.ttf,.woff,.woff2" onChange={(e) => { if (e.target.files[0]) onUploadFont(e.target.files[0]); e.target.value = '' }} /></label>{fontInfo && <p className="tool-desc">Активен: {fontInfo.metrics.family || fontInfo.filename}</p>}</div>
+          <FontPanel fontInfo={fontInfo} loadingFont={loadingFont} fontError={fontError} onUploadFont={onUploadFont} />
           <div className="tool-group anim-in"><button className="btn-ghost wide" onClick={() => setBentoSeed((s) => s + 1)}>↻ Новая композиция</button></div>
         </aside> : <Sidebar
           fontInfo={fontInfo}

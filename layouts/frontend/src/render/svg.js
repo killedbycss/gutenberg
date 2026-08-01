@@ -117,8 +117,23 @@ export function buildSvgString(spec, measurer, { fontCss = '' } = {}) {
       )
     }
   }
+  parts.push(deviceChromeSvg(spec.meta?.purpose, draw.width, draw.height, spec.canvas.background?.color || '#fff'))
   parts.push('</svg>')
   return parts.join('')
+}
+
+function deviceChromeSvg(purpose, width, height, background) {
+  const hex = background.replace('#', '')
+  const rgb = hex.length === 6 ? [0, 2, 4].map((index) => parseInt(hex.slice(index, index + 2), 16)) : [255, 255, 255]
+  const dark = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000 < 128
+  const ink = dark ? '#fff' : '#111'
+  const faint = dark ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.15)'
+  if (purpose === 'mobile-portrait') return `<g><text x="${width*.075}" y="${height*.032}" fill="${ink}" font-family="sans-serif" font-size="${height*.012}" font-weight="600">9:41</text><rect x="${width*.37}" y="${height*.012}" width="${width*.26}" height="${height*.034}" rx="${height*.017}" fill="#050505"/><circle cx="${width*.585}" cy="${height*.029}" r="${height*.005}" fill="#20242a"/><rect x="${width*.36}" y="${height*.976}" width="${width*.28}" height="${height*.004}" rx="${height*.002}" fill="${ink}" opacity=".8"/></g>`
+  if (purpose === 'tablet-portrait') return `<g><circle cx="${width*.5}" cy="${height*.015}" r="${height*.004}" fill="${ink}" opacity=".65"/><text x="${width*.04}" y="${height*.03}" fill="${ink}" font-family="sans-serif" font-size="${height*.011}" font-weight="600">9:41</text><rect x="${width*.43}" y="${height*.977}" width="${width*.14}" height="${height*.0035}" rx="${height*.002}" fill="${ink}" opacity=".7"/></g>`
+  if (purpose === 'desktop-hd') return `<g><rect width="${width}" height="${height*.075}" fill="${faint}"/><circle cx="${width*.022}" cy="${height*.037}" r="${height*.009}" fill="#ff5f57"/><circle cx="${width*.042}" cy="${height*.037}" r="${height*.009}" fill="#febc2e"/><circle cx="${width*.062}" cy="${height*.037}" r="${height*.009}" fill="#28c840"/><rect x="${width*.16}" y="${height*.018}" width="${width*.68}" height="${height*.038}" rx="${height*.019}" fill="${background}" opacity=".72" stroke="${ink}" stroke-opacity=".18"/><text x="${width*.5}" y="${height*.044}" text-anchor="middle" fill="${ink}" opacity=".6" font-family="sans-serif" font-size="${height*.014}">gutenberg.local</text></g>`
+  if (purpose === 'ebook-reader') return `<g><text x="${width*.05}" y="${height*.026}" fill="${ink}" opacity=".7" font-family="serif" font-size="${height*.01}">09:41</text><text x="${width*.95}" y="${height*.026}" text-anchor="end" fill="${ink}" opacity=".7" font-family="sans-serif" font-size="${height*.01}">82%</text><line x1="${width*.05}" y1="${height*.955}" x2="${width*.95}" y2="${height*.955}" stroke="${ink}" stroke-opacity=".22"/></g>`
+  if (purpose === 'book-a5' || purpose === 'book-145x215') return `<g><line x1="${width*.08}" y1="${height*.94}" x2="${width*.92}" y2="${height*.94}" stroke="${ink}" stroke-opacity=".18"/><text x="${width*.5}" y="${height*.965}" text-anchor="middle" fill="${ink}" opacity=".65" font-family="serif" font-size="${height*.009}">— 24 —</text></g>`
+  return ''
 }
 
 // SVG-строка → PNG Blob через offscreen canvas. scale множит разрешение.

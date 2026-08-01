@@ -24,7 +24,6 @@ export default function Sidebar({
   spec, selected, selectedId, onSelect, onFrameChange, onToggleHidden,
   bgColor, onBgColor, onResetEdits, hasEdits,
 }) {
-  const fontInput = useRef(null)
   const activePurpose = PURPOSES.find((item) => item.id === purposeId)
 
   const groups = PURPOSES.reduce((acc, p) => {
@@ -37,37 +36,7 @@ export default function Sidebar({
   return (
     <aside className="toolbar">
       {/* --- Шрифт --- */}
-      <div className="tool-group anim-in">
-        <h3>Шрифт</h3>
-        <div
-          className={`dropzone compact${loadingFont ? ' disabled' : ''}`}
-          onClick={() => fontInput.current?.click()}
-        >
-          <div className="dropzone-title">
-            {loadingFont ? 'Читаю шрифт…' : fontInfo ? fontInfo.fileName : 'Загрузить шрифт'}
-          </div>
-          <div className="dropzone-hint">OTF · TTF · WOFF · WOFF2</div>
-        </div>
-        <input
-          ref={fontInput} type="file" hidden accept=".otf,.ttf,.woff,.woff2,.ttc"
-          onChange={(e) => e.target.files[0] && onUploadFont(e.target.files[0])}
-        />
-        {fontError && <p className="tool-warn">{fontError}</p>}
-        {fontInfo && (
-          <div className="metrics">
-            <div className="metrics-name">{fontInfo.metrics.family || 'Без имени'}</div>
-            <dl className="metrics-grid">
-              <dt>UPM</dt><dd>{fontInfo.metrics.unitsPerEm}</dd>
-              <dt>cap-height</dt><dd>{fontInfo.metrics.capHeight}</dd>
-              <dt>x-height</dt><dd>{fontInfo.metrics.xHeight}</dd>
-            </dl>
-            <p className={`metrics-src${fontInfo.metrics.capHeightSource === 'fallback' ? ' warn' : ''}`}>
-              cap-height: {CAP_SOURCE_NOTE[fontInfo.metrics.capHeightSource] || '—'}
-            </p>
-            {fontInfo.metrics.hasCyrillic === false && <p className="script-note">Кириллица не найдена. Для Bento включён английский текст.</p>}
-          </div>
-        )}
-      </div>
+      <FontPanel fontInfo={fontInfo} loadingFont={loadingFont} fontError={fontError} onUploadFont={onUploadFont} />
 
       {/* --- Назначение --- */}
       <div className="tool-group anim-in">
@@ -183,6 +152,28 @@ export default function Sidebar({
       </div>
     </aside>
   )
+}
+
+export function FontPanel({ fontInfo, loadingFont, fontError, onUploadFont }) {
+  const fontInput = useRef(null)
+  return <div className="tool-group anim-in">
+    <h3>Шрифт</h3>
+    <div className={`dropzone compact${loadingFont ? ' disabled' : ''}`} onClick={() => fontInput.current?.click()}>
+      <div className="dropzone-title">{loadingFont ? 'Читаю шрифт…' : fontInfo ? fontInfo.fileName : 'Загрузить шрифт'}</div>
+      <div className="dropzone-hint">OTF · TTF · WOFF · WOFF2</div>
+    </div>
+    <input ref={fontInput} type="file" hidden accept=".otf,.ttf,.woff,.woff2,.ttc" onChange={(e) => {
+      if (e.target.files[0]) onUploadFont(e.target.files[0])
+      e.target.value = ''
+    }} />
+    {fontError && <p className="tool-warn">{fontError}</p>}
+    {fontInfo && <div className="metrics">
+      <div className="metrics-name">{fontInfo.metrics.family || 'Без имени'}</div>
+      <dl className="metrics-grid"><dt>UPM</dt><dd>{fontInfo.metrics.unitsPerEm}</dd><dt>cap-height</dt><dd>{fontInfo.metrics.capHeight}</dd><dt>x-height</dt><dd>{fontInfo.metrics.xHeight}</dd></dl>
+      <p className={`metrics-src${fontInfo.metrics.capHeightSource === 'fallback' ? ' warn' : ''}`}>cap-height: {CAP_SOURCE_NOTE[fontInfo.metrics.capHeightSource] || '—'}</p>
+      {fontInfo.metrics.hasCyrillic === false && <p className="script-note">Кириллица не найдена. Для Bento включён английский текст.</p>}
+    </div>}
+  </div>
 }
 
 function labelFor(frame) {

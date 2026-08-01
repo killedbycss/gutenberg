@@ -2,6 +2,7 @@ import React, { useMemo, useRef } from 'react'
 import { specToDrawOps } from '../render/svg'
 import { makeMeasurer } from '../render/textLayout'
 import { RENDER_FONT_FAMILY } from '../layout/schema'
+import { DeviceChrome } from './SpecSvg'
 
 // Интерактивное превью макета: рисует примитивы из specToDrawOps (тот же расчёт,
 // что и экспорт) и накладывает слой хит-зон для выделения и перетаскивания.
@@ -76,6 +77,7 @@ export default function Preview({
           onPointerDown={() => onSelect(null)}
         >
           {draw.ops.map((op, i) => renderOp(op, i))}
+          <DeviceChrome purpose={spec.meta?.purpose} width={W} height={H} background={spec.canvas?.background?.color} />
 
           {spec.frames.filter((f) => !f.hidden).map((f) => (
             <rect
