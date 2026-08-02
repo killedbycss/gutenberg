@@ -25,9 +25,12 @@ export default function Preview({
   const H = draw.height
   const selFrame = spec.frames.find((f) => f.id === selectedId)
   const coordFontSize = Math.max(34, Math.min(54, Math.min(W, H) * .032))
-  const coordHeight = coordFontSize * 1.75
-  const coordLabel = selFrame ? `X ${Math.round(selFrame.box.x * 100)}%  Y ${Math.round(selFrame.box.y * 100)}%  W ${Math.round(selFrame.box.w * 100)}%  H ${Math.round(selFrame.box.h * 100)}%` : ''
-  const coordWidth = Math.min(W * .72, coordLabel.length * coordFontSize * .58 + coordFontSize * 1.1)
+  const coordHeight = coordFontSize * 2.65
+  const coordWidth = Math.min(W * .7, coordFontSize * 13.5)
+  const coordX = selFrame ? Math.max(6, Math.min(selFrame.box.x * W, W - coordWidth - 6)) : 0
+  const coordY = selFrame ? Math.max(6, selFrame.box.y * H - coordHeight - coordFontSize * .3) : 0
+  const coordRowOne = selFrame ? `X  ${Math.round(selFrame.box.x * 100)}%     Y  ${Math.round(selFrame.box.y * 100)}%` : ''
+  const coordRowTwo = selFrame ? `W  ${Math.round(selFrame.box.w * 100)}%     H  ${Math.round(selFrame.box.h * 100)}%` : ''
 
   function startDrag(e, frame) {
     e.stopPropagation()
@@ -95,8 +98,10 @@ export default function Preview({
 
           {selFrame && !selFrame.hidden && <g pointerEvents="none">
             <rect className="frame-sel" fill="none" x={selFrame.box.x * W} y={selFrame.box.y * H} width={selFrame.box.w * W} height={selFrame.box.h * H} />
-            <rect className="frame-coord-bg" x={selFrame.box.x * W} y={Math.max(2, selFrame.box.y * H - coordHeight - 8)} width={coordWidth} height={coordHeight} rx={coordFontSize * .32} />
-            <text className="frame-coord-label" fontSize={coordFontSize} x={selFrame.box.x * W + coordFontSize * .55} y={Math.max(coordFontSize * 1.18, selFrame.box.y * H - coordFontSize * .48)}>{coordLabel}</text>
+            <rect className="frame-coord-bg" x={coordX} y={coordY} width={coordWidth} height={coordHeight} rx={coordFontSize * .38} />
+            <line className="frame-coord-divider" x1={coordX + coordFontSize * .55} x2={coordX + coordWidth - coordFontSize * .55} y1={coordY + coordHeight / 2} y2={coordY + coordHeight / 2} />
+            <text className="frame-coord-label" fontSize={coordFontSize} x={coordX + coordFontSize * .58} y={coordY + coordFontSize * 1.03}>{coordRowOne}</text>
+            <text className="frame-coord-label" fontSize={coordFontSize} x={coordX + coordFontSize * .58} y={coordY + coordFontSize * 2.18}>{coordRowTwo}</text>
           </g>}
         </svg>
       </div>

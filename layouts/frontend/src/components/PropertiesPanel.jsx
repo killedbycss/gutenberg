@@ -87,7 +87,7 @@ export default function PropertiesPanel({
       {spec?.frames?.length > 0 && <div className="tool-group"><h3>Блоки</h3><ul className="blocks">
         {spec.frames.map((block) => <li key={block.id} className={`block-row${block.hidden ? ' off' : ''}${selectedId === block.id ? ' sel' : ''}`} onClick={() => onSelect(block.id)}>
           <span className="block-name">{block.type === 'image' ? 'изображение' : ROLE_LABEL[block.role] || block.role}</span>
-          <button className="eye" onClick={(event) => { event.stopPropagation(); onToggleHidden(block.id) }}>{block.hidden ? '○' : '●'}</button>
+          <button className="eye" title={block.hidden ? 'Показать блок' : 'Скрыть блок'} aria-label={block.hidden ? 'Показать блок' : 'Скрыть блок'} onClick={(event) => { event.stopPropagation(); onToggleHidden(block.id) }}><EyeIcon hidden={block.hidden} /></button>
         </li>)}
       </ul></div>}
       <div className="tool-group block-geometry-group">
@@ -101,7 +101,7 @@ export default function PropertiesPanel({
                   value={Math.round(frame.box[key] * 1000) / 10}
                   onChange={(event) => onMove(frame.id, {
                     [key]: clamp01(+event.target.value / 100),
-                  })} /><em>%</em><CopyButton label={`Копировать ${label.toLowerCase()}`} onClick={() => copyValue(`${Math.round(frame.box[key] * 1000) / 10}%`)} /></div>
+                  })} /><em>%</em></div>
               </label>
             ))}
           </div>
@@ -113,6 +113,10 @@ export default function PropertiesPanel({
 
 function LockIcon({ locked }) {
   return <svg viewBox="0 0 16 16" aria-hidden="true"><path d={locked ? 'M4.5 7V5.25a3.5 3.5 0 0 1 7 0V7M4 7.25h8v6.25H4z' : 'M6 7V5.25a3.5 3.5 0 0 1 6.35-2.04M4 7.25h8v6.25H4z'} /></svg>
+}
+
+function EyeIcon({ hidden }) {
+  return <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M2.25 9s2.35-4 6.75-4 6.75 4 6.75 4-2.35 4-6.75 4S2.25 9 2.25 9Z" /><circle cx="9" cy="9" r="2" />{hidden && <path d="m3 3 12 12" />}</svg>
 }
 
 function CopyButton({ label, onClick }) {
