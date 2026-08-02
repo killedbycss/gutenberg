@@ -24,6 +24,7 @@ for mod in spellcheck typograph converter layouts; do
 done
 
 cp "$ROOT/converter/frontend/node_modules/fonteditor-core/woff2/woff2.wasm" "$OUT/app/converter/woff2.wasm"
+cp "$ROOT/layouts/frontend/node_modules/fonteditor-core/woff2/woff2.wasm" "$OUT/app/layouts/woff2.wasm"
 touch "$ROOT/.nojekyll"
 
 echo "Готово: $ROOT/index.html и $OUT"

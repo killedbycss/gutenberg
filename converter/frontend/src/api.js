@@ -1,4 +1,5 @@
 import { createFont, woff2 } from 'fonteditor-core'
+import { coverageFromCmap } from './charsets.js'
 
 const API_BASE = import.meta.env.VITE_API_BASE || ''
 const BROWSER_ONLY = import.meta.env.VITE_BROWSER_ONLY === '1'
@@ -46,25 +47,25 @@ function imageInfo(file) {
   })
 }
 
-function fontReport(file, data) {
+function fontReport(file, data, preset = 'basic') {
   const object = data.get()
   const cmap = object.cmap || {}
   const codes = Object.keys(cmap).map(Number)
-  const cyr = codes.filter((code) => code >= 0x400 && code <= 0x52f).length
+  const coverage = coverageFromCmap(cmap, preset)
+  const cyrillic = coverage.categories.find((item) => item.key === 'cyrillic')
   const key = ext(file.name)
   const outline = object.CFF || object.CFF2 ? 'cff' : 'glyf'
   return { filename: file.name, size: file.size, ok: true, kind: 'font',
     source: { key, label: key.toUpperCase(), outline }, metadata: { family: stem(file.name), subfamily: 'Regular' },
-    metrics: { unitsPerEm: object.head?.unitsPerEm, glyphCount: object.glyf?.length, encodedCount: codes.length,
+    metrics: { unitsPerEm: object.head?.unitsPerEm, glyphCount: object.glyf?.length, encodedCount: codes.length, hasCyrillic: !!cyrillic && cyrillic.present / cyrillic.total >= 0.8,
       weightClass: object['OS/2']?.usWeightClass, widthClass: object['OS/2']?.usWidthClass,
       vertical: { ascent: object.hhea?.ascent, descent: object.hhea?.descent, lineGap: object.hhea?.lineGap,
         capHeight: object['OS/2']?.sCapHeight, xHeight: object['OS/2']?.sxHeight },
       italicAngle: object.post?.italicAngle, styleFlags: { bold: !!(object.head?.macStyle & 1), italic: !!(object.head?.macStyle & 2) } },
-    coverage: { preset: 'basic', total: codes.length, present: codes.length, missing: 0, coverage: 100, complete: true,
-      categories: [{ key: 'cyrillic', label: 'Кириллица', total: cyr, present: cyr, missing: 0, coverage: cyr ? 100 : 0, missingGlyphs: [] }] } }
+    coverage }
 }
 
-async function readBrowserFile(file) {
+async function readBrowserFile(file, preset = 'basic') {
   if (isVideo(file)) return { filename: file.name, size: file.size, ok: true, kind: 'media', source: { key: ext(file.name), label: ext(file.name).toUpperCase() }, media: {} }
   if (isImage(file)) {
     const info = await imageInfo(file)
@@ -74,12 +75,12 @@ async function readBrowserFile(file) {
   const type = ext(file.name)
   if (!FONT_EXTS.has(type)) throw new Error(`Неподдерживаемый файл: ${file.name}`)
   if (type === 'woff2') await ensureWoff2()
-  return fontReport(file, createFont(await file.arrayBuffer(), { type, hinting: true, kerning: true, compound2simple: false }))
+  return fontReport(file, createFont(await file.arrayBuffer(), { type, hinting: true, kerning: true, compound2simple: false }), preset)
 }
 
 export async function analyzeFonts(files, preset = 'basic') {
   if (BROWSER_ONLY) {
-    const reports = await Promise.all(files.map(async (file) => { try { return await readBrowserFile(file) } catch (error) { return { filename: file.name, size: file.size, ok: false, kind: isImage(file) ? 'image' : 'font', error: error.message } } }))
+    const reports = await Promise.all(files.map(async (file) => { try { return await readBrowserFile(file, preset) } catch (error) { return { filename: file.name, size: file.size, ok: false, kind: isImage(file) ? 'image' : 'font', error: error.message } } }))
     return { reports, preset }
   }
   const form = new FormData(); files.forEach((file) => form.append('fonts', file, file.name)); form.append('preset', preset)

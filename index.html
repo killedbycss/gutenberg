@@ -124,16 +124,15 @@
 
     .loader {
       position: absolute; inset: 0; display: grid; place-items: center;
-      background: var(--bg); color: var(--muted); font-size: 14px; gap: 10px;
-      z-index: 2;
+      background: var(--bg); color: var(--muted); z-index: 2;
     }
     .loader.hidden { display: none; }
-    .spinner {
-      width: 26px; height: 26px; border-radius: 50%;
-      border: 3px solid var(--border); border-top-color: var(--primary);
-      animation: spin .8s linear infinite; margin: 0 auto 10px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-card { width: min(260px, calc(100vw - 48px)); padding: 16px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); box-shadow: 0 10px 34px rgba(0,0,0,.09); }
+    .loader-card strong { display: block; color: var(--text); font-size: 13px; font-weight: 600; }
+    .loader-card span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .loader-track { height: 3px; margin-top: 13px; overflow: hidden; border-radius: 3px; background: var(--surface-2); }
+    .loader-track i { display: block; width: 42%; height: 100%; border-radius: inherit; background: var(--primary); animation: loader-progress 1.05s ease-in-out infinite; }
+    @keyframes loader-progress { 0% { transform: translateX(-110%); } 100% { transform: translateX(350%); } }
 
     @media (max-width: 720px) {
       .topbar { gap: 6px; padding: 0 8px; }
@@ -187,11 +186,8 @@
   <div class="support-pop" id="support-pop" role="status" hidden><strong>Спасибо!</strong><p>Автор — Тарас Балабаев и немного вайб-кода. Вы можете поделиться данным ресурсом или скопировать мой номер и прислать мне 100 рублей — это целых 4 пакета кофе и дальнейшие обновления:)</p><div class="support-actions"><button id="copy-support-number">Копировать номер</button><a href="https://killedbycss.github.io/portfolio" target="_blank" rel="noopener">Портфолио ↗</a></div></div>
 
   <main class="stage" id="stage">
-    <div class="loader" id="loader">
-      <div>
-        <div class="spinner"></div>
-        Загрузка модуля…
-      </div>
+    <div class="loader hidden" id="loader" role="status" aria-live="polite">
+      <div class="loader-card"><strong id="loader-title">Открываю модуль</strong><span id="loader-detail">Загружаю интерфейс…</span><div class="loader-track"><i></i></div></div>
     </div>
     <!-- iframe создаются скриптом ниже -->
   </main>
@@ -206,6 +202,10 @@
 
       var stage = document.getElementById('stage');
       var loader = document.getElementById('loader');
+      var loaderTitle = document.getElementById('loader-title');
+      var loaderDetail = document.getElementById('loader-detail');
+      var loaderTimer = null;
+      var loaderSlowTimer = null;
       var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
       var tabsMenu = document.querySelector('.tabs');
       var menuToggle = document.getElementById('menu-toggle');
@@ -316,7 +316,20 @@
       var active = null;
 
       function updateLoader() {
-        loader.classList.toggle('hidden', !!loaded[active === 'bento' ? 'layouts' : active]);
+        clearTimeout(loaderTimer);
+        clearTimeout(loaderSlowTimer);
+        var key = active === 'bento' ? 'layouts' : active;
+        if (!active || loaded[key]) { loader.classList.add('hidden'); return; }
+        loaderTitle.textContent = 'Открываю «' + LABELS[active] + '»';
+        loaderDetail.textContent = 'Загружаю интерфейс…';
+        // Быстрые переходы остаются мгновенными: индикатор появляется только
+        // когда модуль действительно не успел открыться за короткий порог.
+        loaderTimer = setTimeout(function () {
+          if (!loaded[active === 'bento' ? 'layouts' : active]) loader.classList.remove('hidden');
+        }, 180);
+        loaderSlowTimer = setTimeout(function () {
+          if (!loaded[active === 'bento' ? 'layouts' : active]) loaderDetail.textContent = 'Подключаю код, шрифты и рабочую область…';
+        }, 1400);
       }
 
       function activate(mod) {
