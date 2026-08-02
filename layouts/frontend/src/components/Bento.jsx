@@ -99,7 +99,7 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
             композицию. Клик по фрагменту — открыть его в редакторе.
           </p>
         </div>
-        <div className="bento-actions"><button className="btn-ghost" onClick={exportPng} disabled={exporting}>PNG</button><button className="btn-ghost" onClick={exportGif} disabled={exporting}>{exporting ? 'Готовлю…' : 'GIF'}</button><button className="btn-primary" onClick={onShuffle}>↻ Перемешать</button></div>
+        <div className="bento-actions"><span className="soon-control" data-tooltip="Скоро"><button className="btn-ghost" disabled aria-label="PNG — скоро">PNG</button></span><span className="soon-control" data-tooltip="Скоро"><button className="btn-ghost" disabled aria-label="GIF — скоро">GIF</button></span><button className="btn-primary" onClick={onShuffle}>↻ Перемешать</button></div>
       </div>
 
       {/* key={seed} перезапускает анимацию «переключения» при каждом перемешивании */}

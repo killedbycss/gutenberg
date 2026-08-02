@@ -16,7 +16,7 @@ const CONTENT_PLACEHOLDER = {
 }
 
 export default function Sidebar({
-  fontInfo, loadingFont, fontError, onUploadFont, logoName, logoError, onUploadLogo, logoColor, onLogoColor,
+  fontInfo, loadingFont, fontError, onUploadFont, logoName, logoError, onUploadLogo,
   purposeId, onPurpose, variant, onVariant,
   paletteColors, paletteLocked, paletteSelected, onPaletteColor,
   onTogglePaletteLock, onTogglePaletteColor, onRandomPalette,
@@ -37,7 +37,7 @@ export default function Sidebar({
   return (
     <aside className="toolbar">
       {/* --- Шрифт --- */}
-      <FontPanel fontInfo={fontInfo} loadingFont={loadingFont} fontError={fontError} onUploadFont={onUploadFont} logoName={logoName} logoError={logoError} onUploadLogo={onUploadLogo} logoColor={logoColor} onLogoColor={onLogoColor} />
+      <FontPanel fontInfo={fontInfo} loadingFont={loadingFont} fontError={fontError} onUploadFont={onUploadFont} logoName={logoName} logoError={logoError} onUploadLogo={onUploadLogo} />
 
       {/* --- Назначение --- */}
       <div className="tool-group anim-in">
@@ -159,7 +159,7 @@ export default function Sidebar({
   )
 }
 
-export function FontPanel({ fontInfo, loadingFont, fontError, onUploadFont, logoName, logoError, onUploadLogo, logoColor = '#111111', onLogoColor }) {
+export function FontPanel({ fontInfo, loadingFont, fontError, onUploadFont, logoName, logoError, onUploadLogo }) {
   const fontInput = useRef(null)
   const logoInput = useRef(null)
   return <div className="tool-group anim-in">
@@ -174,14 +174,13 @@ export function FontPanel({ fontInfo, loadingFont, fontError, onUploadFont, logo
     }} />
     <button className="logo-upload-button" onClick={() => logoInput.current?.click()}>{logoName ? `SVG · ${logoName}` : '+ Добавить SVG-логотип'}</button>
     <input ref={logoInput} type="file" hidden accept="image/svg+xml,.svg" onChange={(event) => { if (event.target.files[0]) onUploadLogo?.(event.target.files[0]); event.target.value = '' }} />
-    {logoName && <label className="logo-color-field"><span>Цвет логотипа</span><div><input type="color" value={logoColor} onChange={(event) => onLogoColor?.(event.target.value)} /><code>{logoColor.toUpperCase()}</code></div></label>}
     {fontError && <p className="tool-warn">{fontError}</p>}
     {logoError && <p className="tool-warn">{logoError}</p>}
     {fontInfo && !fontInfo.isSystem && <div className="metrics">
       <div className="metrics-name">{fontInfo.metrics.family || 'Без имени'}</div>
       <dl className="metrics-grid"><dt>UPM</dt><dd>{fontInfo.metrics.unitsPerEm}</dd><dt>cap-height</dt><dd>{fontInfo.metrics.capHeight}</dd><dt>x-height</dt><dd>{fontInfo.metrics.xHeight}</dd></dl>
       <p className={`metrics-src${fontInfo.metrics.capHeightSource === 'fallback' ? ' warn' : ''}`}>cap-height: {CAP_SOURCE_NOTE[fontInfo.metrics.capHeightSource] || '—'}</p>
-      {fontInfo.metrics.hasCyrillic === false && <p className="script-note">Кириллица не найдена. Для Bento включён английский текст.</p>}
+      {fontInfo.metrics.hasCyrillic === false && <p className="script-note">Кириллица не найдена. В Макетах и Bento используется английский текст.</p>}
     </div>}
   </div>
 }

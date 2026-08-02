@@ -235,6 +235,10 @@ export default function App() {
     () => semanticPalette(paletteColors, [...paletteSelected], paletteWcag),
     [paletteColors, paletteSelected, paletteWcag],
   )
+  const activePaletteColors = useMemo(() => {
+    const selected = [...paletteSelected].map((index) => paletteColors[index]).filter(Boolean)
+    return selected.length ? selected : paletteColors
+  }, [paletteColors, paletteSelected])
   const [content, setContent] = useState(DEFAULT_CONTENT)
 
   const [overrides, setOverrides] = useState({})
@@ -298,8 +302,8 @@ export default function App() {
   }, [fontInfo, purpose, content, variant, paletteValue, overrides, bgColor, paletteWcag, themeVersion])
 
   const bentoItems = useMemo(
-    () => (mode !== 'bento' || !fontInfo ? [] : buildBento(fontInfo.metrics, content, bentoSeed, paletteColors, paletteWcag)),
-    [mode, fontInfo, content, bentoSeed, paletteColors, paletteWcag],
+    () => (mode !== 'bento' || !fontInfo ? [] : buildBento(fontInfo.metrics, content, bentoSeed, activePaletteColors, paletteWcag)),
+    [mode, fontInfo, content, bentoSeed, activePaletteColors, paletteWcag],
   )
 
   const selected = spec ? spec.frames.find((f) => f.id === selectedId) || null : null
@@ -481,10 +485,10 @@ export default function App() {
       </div>
 
       <nav className="mobile-panel-tabs" aria-label="Панели редактора"><button className={mobilePanel === 'left' ? 'on' : ''} onClick={() => setMobilePanel('left')}>Настройки</button><button className={mobilePanel === 'canvas' ? 'on' : ''} onClick={() => setMobilePanel('canvas')}>Холст</button><button className={mobilePanel === 'right' ? 'on' : ''} onClick={() => setMobilePanel('right')}>Свойства</button></nav>
-      <div className={`layout with-properties mobile-panel-${mobilePanel}`}>
+      <div className={`layout with-properties mobile-panel-${mobilePanel}${mode === 'bento' ? ' bento-layout' : ''}`}>
         {mode === 'bento' ? <aside className="toolbar bento-controls mobile-left-panel">
           <AnimationEditor animation={bentoAnimation} onAnimation={setBentoAnimation} speed={bentoSpeed} onSpeed={setBentoSpeed} distance={bentoDistance} onDistance={setBentoDistance} stagger={bentoStagger} onStagger={setBentoStagger} easing={bentoEasing} onEasing={setBentoEasing} customMode={customAnimationMode} onCustomMode={setCustomAnimationMode} customCss={customAnimationCss} onCustomCss={setCustomAnimationCss} />
-          <FontPanel fontInfo={fontInfo} loadingFont={loadingFont} fontError={fontError} onUploadFont={onUploadFont} logoName={logoName} logoError={logoError} onUploadLogo={onUploadLogo} logoColor={logoColor} onLogoColor={setLogoColor} />
+          <FontPanel fontInfo={fontInfo} loadingFont={loadingFont} fontError={fontError} onUploadFont={onUploadFont} logoName={logoName} logoError={logoError} onUploadLogo={onUploadLogo} />
           <div className="tool-group anim-in"><button className="btn-ghost wide" onClick={() => setBentoSeed((s) => s + 1)}>↻ Новая композиция</button></div>
         </aside> : <div className="mobile-left-panel"><Sidebar
           fontInfo={fontInfo}
@@ -494,8 +498,6 @@ export default function App() {
           logoName={logoName}
           logoError={logoError}
           onUploadLogo={onUploadLogo}
-          logoColor={logoColor}
-          onLogoColor={setLogoColor}
           purposeId={purposeId}
           onPurpose={onPurpose}
           variant={variant}
@@ -551,7 +553,7 @@ export default function App() {
               colorVision={colorVision}
               fontCss={fontInfo.fontCss}
               logoSvg={logoSvg}
-              logoColors={paletteColors}
+              logoColors={activePaletteColors}
               logoColor={logoColor}
             />
           ) : (
@@ -576,6 +578,7 @@ export default function App() {
             onExtractPalette={onExtractPalette}
             paletteWcag={paletteWcag} onPaletteWcag={setPaletteWcag}
             colorVision={colorVision} onColorVision={setColorVision}
+            logoName={logoName} logoColor={logoColor} onLogoColor={setLogoColor}
             images={content.images || []} selectedId={selectedId} onSelect={setSelectedId}
             onAddImage={onAddImage} onRemoveImage={onRemoveImage}
             spec={spec} onToggleHidden={onToggleHidden} /></div>

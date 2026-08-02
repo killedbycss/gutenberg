@@ -16,6 +16,7 @@ export default function PropertiesPanel({
   onAddPaletteColor, onRemovePaletteColor,
   onExtractPalette,
   paletteWcag, onPaletteWcag, colorVision, onColorVision,
+  logoName, logoColor, onLogoColor,
   images, selectedId, onSelect, onAddImage, onRemoveImage,
   spec, onToggleHidden,
 }) {
@@ -23,7 +24,7 @@ export default function PropertiesPanel({
   const paletteImageInput = useRef(null)
   const [colorModel, setColorModel] = useState('rgb')
   const fields = [['w', 'Ширина'], ['h', 'Высота'], ['x', 'X'], ['y', 'Y']]
-  const copyHex = async (color) => { try { await navigator.clipboard.writeText(color.toUpperCase()) } catch {} }
+  const copyValue = async (value) => { try { await navigator.clipboard.writeText(String(value)) } catch {} }
   return (
     <aside className={`properties-panel vision-${colorVision}`}>
       <div className="tool-group">
@@ -59,15 +60,15 @@ export default function PropertiesPanel({
               <button className={`palette-lock${paletteLocked.has(index) ? ' locked' : ''}`} title={paletteLocked.has(index) ? 'Разблокировать цвет' : 'Сохранить цвет при генерации'} aria-label={paletteLocked.has(index) ? `Разблокировать цвет ${index + 1}` : `Заблокировать цвет ${index + 1}`} onClick={() => onTogglePaletteLock(index)}><LockIcon locked={paletteLocked.has(index)} /></button>
             </div>
             {colorModel === 'rgb' && <div className="strip-rgb">
-              <label className="hex-field"><span>HEX</span><div><input key={`hex-${color}`} defaultValue={color.toUpperCase()} onBlur={(event) => { const next = normalizeHex(event.target.value); if (next) onPaletteColor(index, next); else event.target.value = color.toUpperCase() }} aria-label={`HEX цвета ${index + 1}`} /><button title="Копировать HEX" aria-label={`Копировать HEX ${color}`} onClick={() => copyHex(color)}>⧉</button></div></label>
-              <label><span>RGBA</span><input key={`rgba-${color}`} defaultValue={rgba} onBlur={(event) => { const next = rgbaToHex(event.target.value); if (next) onPaletteColor(index, next); else event.target.value = rgba }} aria-label={`RGBA цвета ${index + 1}`} /></label>
+              <label><span>HEX</span><div className="copy-field"><input key={`hex-${color}`} defaultValue={color.toUpperCase()} onBlur={(event) => { const next = normalizeHex(event.target.value); if (next) onPaletteColor(index, next); else event.target.value = color.toUpperCase() }} aria-label={`HEX цвета ${index + 1}`} /><CopyButton label="Копировать HEX" onClick={() => copyValue(color.toUpperCase())} /></div></label>
+              <label><span>RGBA</span><div className="copy-field"><input key={`rgba-${color}`} defaultValue={rgba} onBlur={(event) => { const next = rgbaToHex(event.target.value); if (next) onPaletteColor(index, next); else event.target.value = rgba }} aria-label={`RGBA цвета ${index + 1}`} /><CopyButton label="Копировать RGBA" onClick={() => copyValue(rgba)} /></div></label>
             </div>}
-            {colorModel === 'cmyk' && <><div className="strip-cmyk">{['c','m','y','k'].map((channel) => <label key={channel}><span>{channel.toUpperCase()}</span><input type="number" min="0" max="100" value={cmyk[channel]} onChange={(event) => onPaletteColor(index, cmykToHex({...cmyk, [channel]: Math.max(0, Math.min(100, +event.target.value))}))} /></label>)}</div>
-            <label className="strip-pantone"><span>Pantone</span><select value={pantone.name} onChange={(event) => onPaletteColor(index, PANTONE_COLORS.find((item) => item.name === event.target.value)?.hex || color)}>{PANTONE_COLORS.map((item) => <option key={item.name} value={item.name}>{item.name} · {item.hex}</option>)}</select></label></>}
+            {colorModel === 'cmyk' && <><div className="strip-cmyk">{['c','m','y','k'].map((channel) => <label key={channel}><span>{channel.toUpperCase()}</span><div className="copy-field"><input type="number" min="0" max="100" value={cmyk[channel]} onChange={(event) => onPaletteColor(index, cmykToHex({...cmyk, [channel]: Math.max(0, Math.min(100, +event.target.value))}))} /><CopyButton label={`Копировать ${channel.toUpperCase()}`} onClick={() => copyValue(cmyk[channel])} /></div></label>)}</div>
+            <label className="strip-pantone"><span>Pantone</span><div className="copy-field"><select value={pantone.name} onChange={(event) => onPaletteColor(index, PANTONE_COLORS.find((item) => item.name === event.target.value)?.hex || color)}>{PANTONE_COLORS.map((item) => <option key={item.name} value={item.name}>{item.name} · {item.hex}</option>)}</select><CopyButton label="Копировать Pantone" onClick={() => copyValue(`${pantone.name} · ${pantone.hex}`)} /></div></label></>}
             </div>
           })}
         </div>
-        <p className="palette-selection-note">✓ включает цвет в смысловую палитру · замок сохраняет его при генерации</p>
+        {logoName && <div className="logo-palette-color"><div><span>Логотип</span><small>{logoName}</small></div><input type="color" value={logoColor} onChange={(event) => onLogoColor(event.target.value)} /><div className="copy-field"><code>{logoColor.toUpperCase()}</code><CopyButton label="Копировать цвет логотипа" onClick={() => copyValue(logoColor.toUpperCase())} /></div></div>}
       </div>
       <div className="tool-group properties-images">
         <h3>Изображения</h3>
@@ -89,7 +90,7 @@ export default function PropertiesPanel({
           <button className="eye" onClick={(event) => { event.stopPropagation(); onToggleHidden(block.id) }}>{block.hidden ? '○' : '●'}</button>
         </li>)}
       </ul></div>}
-      <div className="tool-group">
+      <div className="tool-group block-geometry-group">
         <h3>Координаты и размер</h3>
         {frame ? (
           <div className="properties-fields">
@@ -100,7 +101,7 @@ export default function PropertiesPanel({
                   value={Math.round(frame.box[key] * 1000) / 10}
                   onChange={(event) => onMove(frame.id, {
                     [key]: clamp01(+event.target.value / 100),
-                  })} /><em>%</em></div>
+                  })} /><em>%</em><CopyButton label={`Копировать ${label.toLowerCase()}`} onClick={() => copyValue(`${Math.round(frame.box[key] * 1000) / 10}%`)} /></div>
               </label>
             ))}
           </div>
@@ -112,4 +113,8 @@ export default function PropertiesPanel({
 
 function LockIcon({ locked }) {
   return <svg viewBox="0 0 16 16" aria-hidden="true"><path d={locked ? 'M4.5 7V5.25a3.5 3.5 0 0 1 7 0V7M4 7.25h8v6.25H4z' : 'M6 7V5.25a3.5 3.5 0 0 1 6.35-2.04M4 7.25h8v6.25H4z'} /></svg>
+}
+
+function CopyButton({ label, onClick }) {
+  return <button type="button" className="copy-icon-button" title={label} aria-label={label} onClick={onClick}><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.25" y="5.25" width="7.25" height="7.25" rx="1.2" /><path d="M10.5 5.25V4.4A1.9 1.9 0 0 0 8.6 2.5H4.4a1.9 1.9 0 0 0-1.9 1.9v4.2a1.9 1.9 0 0 0 1.9 1.9h.85" /></svg></button>
 }
