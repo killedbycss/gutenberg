@@ -124,6 +124,10 @@ body {
 .dropzone-title { font-weight: 600; }
 .dropzone-hint { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
 .logo-upload-button { width: 100%; margin-top: 7px; padding: 8px 10px; overflow: hidden; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); color: var(--text); cursor: pointer; font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
+.logo-color-field { display: grid; gap: 6px; margin-top: 9px; color: var(--muted); font-size: 10px; }
+.logo-color-field > div { display: flex; align-items: center; height: 34px; overflow: hidden; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); }
+.logo-color-field input { width: 44px; height: 34px; padding: 0; border: 0; background: none; cursor: pointer; }
+.logo-color-field code { padding: 0 9px; color: var(--text); font: 11px var(--mono); }
 
 .metrics { margin-top: 12px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: var(--surface-2); }
 .metrics-name { font-weight: 600; font-size: 13px; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -171,18 +175,22 @@ body {
 .palette-strip-color { height: 36px; border: 0; border-radius: 5px; color: #fff; cursor: pointer; text-shadow: 0 1px 3px #0008; }
 .palette-strip input { width: 20px; height: 24px; padding: 0; border: 0; background: none; }
 .palette-strip > button:last-child { border: 0; background: none; color: var(--text); cursor: pointer; }
+.palette-lock { display: grid; width: 20px; height: 28px; padding: 2px; place-items: center; opacity: .5; }
+.palette-lock:hover, .palette-lock.locked { opacity: 1; }
+.palette-lock svg { width: 15px; height: 15px; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
 .palette-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .palette-controls .segmented { width: 124px; }
 .palette-count { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
 .palette-count button { width: 26px; height: 26px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); cursor: pointer; }
-.strip-cmyk { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 5px 0 3px; }
+.strip-cmyk { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 6px 0 3px; }
 .strip-cmyk label { display: flex; align-items: center; gap: 2px; color: var(--muted); font-size: 8px; }
-.strip-cmyk input { width: 100%; min-width: 0; padding: 3px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 9px; }
-.strip-pantone { display: grid; gap: 4px; padding: 6px 0 3px; color: var(--muted); font-size: 9px; }
-.strip-pantone select { width: 100%; min-width: 0; padding: 5px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font: 10px var(--font); }
+.strip-cmyk input { width: 100%; min-width: 0; height: 32px; box-sizing: border-box; padding: 4px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font: 9px var(--mono); }
+.strip-pantone { display: grid; grid-template-columns: 48px 1fr; align-items: center; gap: 5px; padding: 3px 0; color: var(--muted); font-size: 9px; }
+.strip-pantone select { width: 100%; min-width: 0; height: 32px; box-sizing: border-box; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font: 10px var(--font); }
 .strip-rgb { display: grid; gap: 4px; padding: 5px 0 3px; }
 .strip-rgb label { display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 5px; color: var(--muted); font-size: 8px; }
-.strip-rgb input { width: 100%; min-width: 0; box-sizing: border-box; padding: 3px 5px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: 9px var(--mono); cursor: text; }
+.strip-rgb input { width: 100%; min-width: 0; height: 32px; box-sizing: border-box; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font: 9px var(--mono); cursor: text; }
+.palette-selection-note { margin: 8px 2px 0; color: var(--muted); font-size: 9px; line-height: 1.4; }
 .properties-panel .tool-group + .tool-group { margin-top: 24px; }
 .toolbar > .tool-group + .tool-group, .properties-panel > .tool-group + .tool-group { border-top: 1px solid var(--border); padding-top: 20px; }
 
@@ -258,8 +266,8 @@ body {
 
 /* Оверлеи в системе координат холста — обводки постоянной толщины. */
 .frame-sel { stroke: var(--primary); stroke-width: 2; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; }
-.frame-coord-bg { fill: color-mix(in srgb, var(--text) 94%, transparent); stroke: color-mix(in srgb, var(--surface) 70%, transparent); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-.frame-coord-label { fill: var(--surface); font-family: var(--font); font-weight: 650; letter-spacing: .01em; }
+.frame-coord-bg { fill: color-mix(in srgb, var(--text) 96%, transparent); stroke: color-mix(in srgb, var(--surface) 76%, transparent); stroke-width: 1.5; vector-effect: non-scaling-stroke; filter: drop-shadow(0 2px 5px rgba(0,0,0,.22)); }
+.frame-coord-label { fill: var(--surface); font-family: var(--mono); font-weight: 600; letter-spacing: .015em; }
 .frame-ph {
   fill: color-mix(in srgb, var(--primary) 7%, transparent);
   stroke: color-mix(in srgb, var(--primary) 45%, transparent);
@@ -361,7 +369,7 @@ body {
 .properties-panel.vision-achromatopsia .palette-strip-color, .properties-panel.vision-achromatopsia input[type=color] { filter: grayscale(1); }
 .hex-field > div { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 .hex-field > div input { min-width: 0; border: 0; }
-.hex-field > div button { width: 42px; min-height: 38px; border: 0; border-left: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; font-size: 21px; line-height: 1; }
+.hex-field > div button { width: 38px; height: 32px; border: 0; border-left: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; font-size: 19px; line-height: 1; }
 .palette-image-button { width: 100%; margin-bottom: 12px; padding: 9px 10px; border: 1px dashed var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: 12px var(--font); cursor: pointer; }
 .vision-protanopia .bento-grid { filter: sepia(.18) saturate(.72) hue-rotate(-12deg); }
 .vision-deuteranopia .bento-grid { filter: sepia(.12) saturate(.68) hue-rotate(8deg); }
@@ -414,10 +422,10 @@ body {
 /* ---------- Правая панель свойств ---------- */
 .properties-panel { position: sticky; top: 0; min-height: 100vh; max-height: 100vh; overflow-y: auto; border-left: 1px solid var(--border); margin-right: -20px; padding: 16px 20px 16px 16px; background: var(--surface); }
 .properties-panel h3 { margin: 0 0 14px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
-.properties-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 9px 7px; }
+.properties-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 6px; width: fit-content; padding: 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 84%, transparent); font-family: var(--mono); }
 .property-field { flex: 0 0 auto; width: max-content; }
-.property-field > span { display: block; color: var(--text); font-size: 11px; font-weight: 600; margin-bottom: 4px; }
-.property-field > div { display: flex; width: max-content; align-items: center; overflow: hidden; border: 1px solid color-mix(in srgb, var(--text) 28%, var(--border)); border-radius: 7px; background: var(--surface-2); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 72%, transparent); }
+.property-field > span { display: block; color: var(--muted); font: 600 9px var(--mono); letter-spacing: .035em; margin: 0 0 4px 2px; text-transform: uppercase; }
+.property-field > div { display: flex; width: max-content; align-items: center; overflow: hidden; border: 1px solid color-mix(in srgb, var(--text) 30%, var(--border)); border-radius: 7px; background: var(--surface); box-shadow: 0 1px 1px rgba(0,0,0,.04); }
 .property-field input { width: 58px; min-width: 58px; border: 0; padding: 7px 5px 7px 8px; background: none; color: var(--text); font: 600 12px var(--mono); }
 .property-field input:focus { outline: none; }
 .property-field em { padding-right: 8px; color: var(--muted); font-size: 11px; font-style: normal; }

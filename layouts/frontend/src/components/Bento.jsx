@@ -3,8 +3,9 @@ import SpecSvg from './SpecSvg'
 import { makeMeasurer } from '../render/textLayout'
 import { RENDER_FONT_FAMILY } from '../layout/schema'
 
-export default function Bento({ items, fontReady, seed, onShuffle, onPick, animation = 'mixed', animationCss = '', speed = 1, distance = 18, stagger = 90, easing = 'smooth', easingCss = '', showWcag = true, colorVision = 'normal', fontCss = '', logoSvg = '', logoColors = [] }) {
+export default function Bento({ items, fontReady, seed, onShuffle, onPick, animation = 'mixed', animationCss = '', speed = 1, distance = 18, stagger = 90, easing = 'smooth', easingCss = '', showWcag = true, colorVision = 'normal', fontCss = '', logoSvg = '', logoColors = [], logoColor = '#111111' }) {
   const measurer = useMemo(() => makeMeasurer(RENDER_FONT_FAMILY), [fontReady])
+  const coloredLogo = useMemo(() => logoSvg ? colorizeSvg(logoSvg, logoColor) : '', [logoSvg, logoColor])
   const gridRef = useRef(null)
   const [exporting, setExporting] = useState(false)
 
@@ -104,10 +105,9 @@ export default function Bento({ items, fontReady, seed, onShuffle, onPick, anima
       {/* key={seed} перезапускает анимацию «переключения» при каждом перемешивании */}
       <div className={`bento-grid ease-${easing}${logoSvg ? ' logo-bento-grid' : ''}`} key={`${seed}-${logoSvg ? 'logo' : 'type'}`} ref={gridRef} style={{ '--bento-speed': speed, '--bento-distance': `${distance}px`, ...(easingCss ? { '--bento-ease': easingCss } : {}) }}>
         {logoSvg ? Array.from({ length: 4 }, (_, i) => {
-          const color = logoColors[i % Math.max(1, logoColors.length)] || '#111111'
           const background = logoColors[(i + 2) % Math.max(1, logoColors.length)] || '#ffffff'
           return <button key={i} className={`bento-tile logo-bento-tile switch-${i % 2 ? 'a' : 'b'}`} style={{ gridColumn: `${i % 2 + 1}`, gridRow: `${Math.floor(i / 2) + 1}`, animationDelay: `${i * 55}ms`, background }} title="SVG-логотип из палитры">
-            <span className="logo-svg-wrap" dangerouslySetInnerHTML={{ __html: colorizeSvg(logoSvg, color) }} />
+            <span className="logo-svg-wrap" dangerouslySetInnerHTML={{ __html: coloredLogo }} />
           </button>
         }) : items.map((it, i) => (
           <button

@@ -201,6 +201,16 @@ function applyOverrides(spec, overrides, bgColor) {
   return next
 }
 
+function colorizeLogoSvg(source, color) {
+  const doc = new DOMParser().parseFromString(source, 'image/svg+xml')
+  const svg = doc.documentElement
+  svg.querySelectorAll('path, rect, circle, ellipse, polygon, polyline, line, text').forEach((node) => {
+    if (node.getAttribute('fill') !== 'none') { node.setAttribute('fill', color); node.style.fill = color }
+    if (node.hasAttribute('stroke') && node.getAttribute('stroke') !== 'none') { node.setAttribute('stroke', color); node.style.stroke = color }
+  })
+  return new XMLSerializer().serializeToString(svg)
+}
+
 export default function App() {
   const [health, setHealth] = useState(true)
   const [fontInfo, setFontInfo] = useState(SYSTEM_FONT_INFO)
@@ -209,6 +219,7 @@ export default function App() {
   const [logoSvg, setLogoSvg] = useState('')
   const [logoName, setLogoName] = useState('')
   const [logoError, setLogoError] = useState(null)
+  const [logoColor, setLogoColor] = useState('#111111')
 
   const [mode, setMode] = useState(() => new URLSearchParams(window.location.search).get('mode') === 'bento' ? 'bento' : 'editor')
   const [purposeId, setPurposeId] = useState(PURPOSES[0].id)
@@ -256,6 +267,11 @@ export default function App() {
   useEffect(() => {
     document.fonts?.load(`16px '${BOOK_DEFAULT_FONT_FAMILY}'`).then(() => setThemeVersion((value) => value + 1)).catch(() => {})
   }, [])
+  useEffect(() => {
+    if (!logoSvg) return
+    const src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(colorizeLogoSvg(logoSvg, logoColor))}`
+    setContent((current) => ({ ...current, images: (current.images || []).map((item) => item.id === 'brand-logo' ? { ...item, src } : item) }))
+  }, [logoSvg, logoColor])
 
   const purpose = purposeById(purposeId)
   const paletteValue = paletteId === 'custom' ? customPalette : paletteId
@@ -316,7 +332,7 @@ export default function App() {
       doc.querySelectorAll('script, foreignObject, iframe, object, embed').forEach((node) => node.remove())
       doc.querySelectorAll('*').forEach((node) => [...node.attributes].forEach((attribute) => { if (/^on/i.test(attribute.name)) node.removeAttribute(attribute.name) }))
       const clean = new XMLSerializer().serializeToString(svg)
-      const src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(clean)}`
+      const src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(colorizeLogoSvg(clean, logoColor))}`
       setLogoSvg(clean); setLogoName(file.name)
       setContent((current) => ({ ...current, images: [...(current.images || []).filter((item) => item.id !== 'brand-logo'), { id: 'brand-logo', name: file.name, src }] }))
     } catch (error) {
@@ -468,7 +484,7 @@ export default function App() {
       <div className={`layout with-properties mobile-panel-${mobilePanel}`}>
         {mode === 'bento' ? <aside className="toolbar bento-controls mobile-left-panel">
           <AnimationEditor animation={bentoAnimation} onAnimation={setBentoAnimation} speed={bentoSpeed} onSpeed={setBentoSpeed} distance={bentoDistance} onDistance={setBentoDistance} stagger={bentoStagger} onStagger={setBentoStagger} easing={bentoEasing} onEasing={setBentoEasing} customMode={customAnimationMode} onCustomMode={setCustomAnimationMode} customCss={customAnimationCss} onCustomCss={setCustomAnimationCss} />
-          <FontPanel fontInfo={fontInfo} loadingFont={loadingFont} fontError={fontError} onUploadFont={onUploadFont} logoName={logoName} logoError={logoError} onUploadLogo={onUploadLogo} />
+          <FontPanel fontInfo={fontInfo} loadingFont={loadingFont} fontError={fontError} onUploadFont={onUploadFont} logoName={logoName} logoError={logoError} onUploadLogo={onUploadLogo} logoColor={logoColor} onLogoColor={setLogoColor} />
           <div className="tool-group anim-in"><button className="btn-ghost wide" onClick={() => setBentoSeed((s) => s + 1)}>↻ Новая композиция</button></div>
         </aside> : <div className="mobile-left-panel"><Sidebar
           fontInfo={fontInfo}
@@ -478,6 +494,8 @@ export default function App() {
           logoName={logoName}
           logoError={logoError}
           onUploadLogo={onUploadLogo}
+          logoColor={logoColor}
+          onLogoColor={setLogoColor}
           purposeId={purposeId}
           onPurpose={onPurpose}
           variant={variant}
@@ -534,6 +552,7 @@ export default function App() {
               fontCss={fontInfo.fontCss}
               logoSvg={logoSvg}
               logoColors={paletteColors}
+              logoColor={logoColor}
             />
           ) : (
             <Preview

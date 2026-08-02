@@ -26,7 +26,7 @@ export default function Preview({
   const selFrame = spec.frames.find((f) => f.id === selectedId)
   const coordFontSize = Math.max(34, Math.min(54, Math.min(W, H) * .032))
   const coordHeight = coordFontSize * 1.75
-  const coordLabel = selFrame ? `x ${Math.round(selFrame.box.x * 100)}%  y ${Math.round(selFrame.box.y * 100)}%  ·  ${Math.round(selFrame.box.w * 100)}×${Math.round(selFrame.box.h * 100)}%` : ''
+  const coordLabel = selFrame ? `X ${Math.round(selFrame.box.x * 100)}%  Y ${Math.round(selFrame.box.y * 100)}%  W ${Math.round(selFrame.box.w * 100)}%  H ${Math.round(selFrame.box.h * 100)}%` : ''
   const coordWidth = Math.min(W * .72, coordLabel.length * coordFontSize * .58 + coordFontSize * 1.1)
 
   function startDrag(e, frame) {

@@ -56,17 +56,18 @@ export default function PropertiesPanel({
                 {paletteSelected.has(index) ? '✓' : ''}
               </button>
               <input type="color" value={color} onChange={(e) => onPaletteColor(index, e.target.value)} />
-              <button onClick={() => onTogglePaletteLock(index)}>{paletteLocked.has(index) ? '●' : '○'}</button>
+              <button className={`palette-lock${paletteLocked.has(index) ? ' locked' : ''}`} title={paletteLocked.has(index) ? 'Разблокировать цвет' : 'Сохранить цвет при генерации'} aria-label={paletteLocked.has(index) ? `Разблокировать цвет ${index + 1}` : `Заблокировать цвет ${index + 1}`} onClick={() => onTogglePaletteLock(index)}><LockIcon locked={paletteLocked.has(index)} /></button>
             </div>
             {colorModel === 'rgb' && <div className="strip-rgb">
               <label className="hex-field"><span>HEX</span><div><input key={`hex-${color}`} defaultValue={color.toUpperCase()} onBlur={(event) => { const next = normalizeHex(event.target.value); if (next) onPaletteColor(index, next); else event.target.value = color.toUpperCase() }} aria-label={`HEX цвета ${index + 1}`} /><button title="Копировать HEX" aria-label={`Копировать HEX ${color}`} onClick={() => copyHex(color)}>⧉</button></div></label>
               <label><span>RGBA</span><input key={`rgba-${color}`} defaultValue={rgba} onBlur={(event) => { const next = rgbaToHex(event.target.value); if (next) onPaletteColor(index, next); else event.target.value = rgba }} aria-label={`RGBA цвета ${index + 1}`} /></label>
             </div>}
-            {colorModel === 'cmyk' && <div className="strip-cmyk">{['c','m','y','k'].map((channel) => <label key={channel}><span>{channel.toUpperCase()}</span><input type="number" min="0" max="100" value={cmyk[channel]} onChange={(event) => onPaletteColor(index, cmykToHex({...cmyk, [channel]: Math.max(0, Math.min(100, +event.target.value))}))} /></label>)}</div>}
-            <label className="strip-pantone"><span>Pantone</span><select value={pantone.name} onChange={(event) => onPaletteColor(index, PANTONE_COLORS.find((item) => item.name === event.target.value)?.hex || color)}>{PANTONE_COLORS.map((item) => <option key={item.name} value={item.name}>{item.name} · {item.hex}</option>)}</select></label>
+            {colorModel === 'cmyk' && <><div className="strip-cmyk">{['c','m','y','k'].map((channel) => <label key={channel}><span>{channel.toUpperCase()}</span><input type="number" min="0" max="100" value={cmyk[channel]} onChange={(event) => onPaletteColor(index, cmykToHex({...cmyk, [channel]: Math.max(0, Math.min(100, +event.target.value))}))} /></label>)}</div>
+            <label className="strip-pantone"><span>Pantone</span><select value={pantone.name} onChange={(event) => onPaletteColor(index, PANTONE_COLORS.find((item) => item.name === event.target.value)?.hex || color)}>{PANTONE_COLORS.map((item) => <option key={item.name} value={item.name}>{item.name} · {item.hex}</option>)}</select></label></>}
             </div>
           })}
         </div>
+        <p className="palette-selection-note">✓ включает цвет в смысловую палитру · замок сохраняет его при генерации</p>
       </div>
       <div className="tool-group properties-images">
         <h3>Изображения</h3>
@@ -107,4 +108,8 @@ export default function PropertiesPanel({
       </div>
     </aside>
   )
+}
+
+function LockIcon({ locked }) {
+  return <svg viewBox="0 0 16 16" aria-hidden="true"><path d={locked ? 'M4.5 7V5.25a3.5 3.5 0 0 1 7 0V7M4 7.25h8v6.25H4z' : 'M6 7V5.25a3.5 3.5 0 0 1 6.35-2.04M4 7.25h8v6.25H4z'} /></svg>
 }
